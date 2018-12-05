@@ -81,6 +81,7 @@ class QVGSM_VALUE:
                 first_data['MARKET_CAP_COM'] = first_data['MARKET_CAP_COM_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
+                first_data['FLOAT_CAP'] = first_data['FLOAT_CAP_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP_COM']>100000000000]
                 
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']

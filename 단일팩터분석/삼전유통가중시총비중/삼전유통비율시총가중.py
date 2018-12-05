@@ -73,6 +73,7 @@ class QVGSM_VALUE:
                 first_data['MARKET_CAP_COM'] = first_data['MARKET_CAP_COM_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
+                first_data['FLOAT_CAP'] = first_data['FLOAT_CAP_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP_COM']>100000000000]
                 
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']
@@ -219,7 +220,7 @@ year_data=list(net_daily_gross_rtn.index.year.unique())
 month_data=list(net_daily_gross_rtn.index.month.unique())
 month_data.sort()
 
-for p in range(1,1):
+for p in range(1,2):
     locals()['save_data_{}'.format(p)] = pd.DataFrame(data = np.zeros((len(year_data),len(month_data))), index = year_data, columns = month_data)
     save_data_temp = pd.DataFrame(net_daily_gross_rtn)
     for pp in year_data:
