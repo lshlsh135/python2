@@ -95,8 +95,13 @@ cpi_data.iloc[179,0] = '2015-12-30'
 cpi_data.iloc[191,0] = '2016-12-29'
 cpi_data.iloc[203,0] = '2017-12-28'
 
+consensus =  pd.read_sql("""select * from consensus_raw_data_20181130""",con=connection)
+#raw_data에서는 재무 데이터 시점 때문에 lead 1 trd_date를 trd_date로하고 실제 trd_date를 trd_date_old
+#로 사용한다. consensus data는 1개월 lead를 사용하면 바뀌기 때문에 TRD_DATE_OLD에 맞춘다.
+#consensus = consensus.rename(columns={'TRD_DATE':'TRD_DATE_OLD'})
+#응 아니야!
 
-
+consensus_1 = consensus.head(1000)
 kospi_day = pd.read_sql("""select * from kospi_day_prc_20181130""",con=connection) # 코스피 일별 종가
 kospi_day.set_index('TRD_DATE',inplace=True)
 kospi200_day = pd.read_sql("""select * from kospi200_day_prc_20181130""",con=connection) # 코스피 일별 종가
@@ -156,33 +161,11 @@ quarter_data = pd.DataFrame(np.zeros((200,3*col_length)))
 return_final = pd.DataFrame(np.zeros((1,1)))
 return_month_data = pd.DataFrame(np.zeros((1,3*col_length)))
 
-#raw_data = raw_data[raw_data['WICS_BIG']!='금융']
-#raw_data = raw_data[raw_data['JIJU']!='지주']
-#raw_data = raw_data[(raw_data['EQUITY'].notnull())&(raw_data['EQUITY']>0)] #equity가 null인건 망한기업 혹은 기업이 아님
-#raw_data['size_FIF_wisefn'] = raw_data['JISU_STOCK']*raw_data['FIF_RATIO']*raw_data['ADJ_PRC'] # 예전에는 코드에서 만들었으나 이제는 한번에 미리 만들자
-
-#raw_data['CO_NM_y'] = raw_data['CO_NM'] # temp 데이타가 추가되게 되면 이게 필요한데 지금은 없어서 그냥 강제로 만들었다.
-
 
 first_column = len(raw_data.columns)  # 1/pbr 의 loc
-#raw_data['gp/a'] = raw_data['GROSS_PROFIT'] / raw_data['ASSET']    # gross profit을 ttm으로..
-#raw_data['EBIT_YOY'] = raw_data['OPER_PROFIT_YOY']
-# value
-#raw_data['TLTA'] = raw_data['LIAB']/raw_data['ADJASSET']
-#raw_data['WCTA'] = (raw_data['LIQ_EQUITY']-raw_data['LIQ_DEBT'])/raw_data['ADJASSET']
-#raw_data['CLCA'] = raw_data['LIQ_DEBT']/raw_data['LIQ_EQUITY']
-#raw_data['OENEG'] = (raw_data['LIAB']>raw_data['ASSET'])*1
-#raw_data['NITA'] = raw_data['NI']/raw_data['ASSET']
-#raw_data['FUTL'] = raw_data['PRETAX_NI_TTM']/raw_data['LIAB']
-#raw_data['GPOA'] = raw_data['GROSS_PROFIT_TTM']/raw_data['ASSET']
-#raw_data['ROE'] = raw_data['NI']/raw_data['EQUITY']
-#raw_data['ROA'] = raw_data['NI']/raw_data['ASSET']
-#raw_data['CFOA'] = raw_data['CFO_TTM']/raw_data['ASSET']
-#raw_data['GMAR'] = raw_data['GROSS_PROFIT_TTM']/raw_data['SALES_TTM']
-#raw_data['ACC'] = (raw_data['NI']-raw_data['CFO_TTM'])/raw_data['ASSET']
-#raw_data['div_yield']=raw_data['CASH_DIV_COM']/raw_data['MARKET_CAP']
-#raw_data['1/per']= raw_data['ADJ_NI_12M_FWD']/raw_data['MARKET_CAP']
-#raw_data['1/pbr'] = raw_data['EQUITY']/raw_data['MARKET_CAP']
 
-#raw_data['INTWO'] = np.max(raw_data['NI'],raw_data['NI_1Y']) 마지막에 해야겠는걸
+raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경
+
+raw_data = pd.merge(raw_data,consensus,on=['TRD_DATE','GICODE'])
+
 raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경

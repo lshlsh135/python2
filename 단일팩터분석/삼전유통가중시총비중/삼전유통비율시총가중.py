@@ -45,21 +45,22 @@ import copy
 class QVGSM_VALUE:
  
     def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data,oscore,momentum):
-       stock_num = 20
-       day_date = kospi_day.reset_index()
-       factor = 'div_yield'
-       col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
-       daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
-       for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
+        stock_num = 20
+        day_date = kospi_day.reset_index()
+        factor = 'EARNING_REVISION'
+        col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
+        daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
+        for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
             locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
             locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
-
+        if factor == 'EARNING_REVISION':
+            start_n = 35
     def QVGSM(self):
         
-        for n in range(20,col_length): 
+        for n in range(start_n,col_length): 
             if rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
@@ -80,6 +81,7 @@ class QVGSM_VALUE:
                 first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
+                first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
@@ -140,6 +142,7 @@ class QVGSM_VALUE:
                 first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
+                first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
