@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 class Performance_Evaluation:
     def __init__(self, wealth, kospi_day, kospi200_day):
-        self.wealth = wealth
+        self.wealth = pd.DataFrame(wealth)
         self.kospi_day = kospi_day
         self.kospi200_day = kospi200_day
         
@@ -36,4 +36,4 @@ class Performance_Evaluation:
                     if len(save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)]) != 0:
                         print(pp,ppp)
                         locals()['save_data_{}'.format(p)].loc[pp,ppp] = save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values[0]
-        
+        return locals()['save_data_{}'.format(p)]

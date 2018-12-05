@@ -48,6 +48,7 @@ import numpy as np
 import pandas as pd
 from drawdown import drawdown
 import copy
+from Performance_Evaluation import Performance_Evaluation
 
 class QVGSM_VALUE:
  
@@ -238,3 +239,6 @@ for p in range(1,2):
                 print(pp,ppp)
                 locals()['save_data_{}'.format(p)].loc[pp,ppp] = save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values[0]
 
+wealth = pd.read_pickle(r'C:\Users\지형범\OneDrive\KB자산운용\허승재팀장님\onefactor\단일팩터분석\삼전유통가중시총비중\div\div_yield_wealth')
+a=Performance_Evaluation(wealth,kospi_day,kospi200_day)
+b=a.Monthly_PF_EV()
