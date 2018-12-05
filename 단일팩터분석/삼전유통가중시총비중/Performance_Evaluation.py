@@ -37,3 +37,16 @@ class Performance_Evaluation:
                         print(pp,ppp)
                         locals()['save_data_{}'.format(p)].loc[pp,ppp] = save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values[0]
         return locals()['save_data_{}'.format(p)]
+    
+    def Monthly_Winning_ratio(self,save_data):
+        self.save_data = save_data
+        win_data = pd.Series()
+
+        for i in range(len(self.save_data.columns)):
+            win_data = pd.concat([win_data,self.save_data.iloc[:,i]])    
+        
+        win_data = pd.DataFrame(win_data)
+        win_data = win_data[win_data.iloc[:,0]!=0]
+        win_rate = round(len(win_data[win_data.iloc[:,0]>1])/len(win_data),2)
+        
+        return win_rate
