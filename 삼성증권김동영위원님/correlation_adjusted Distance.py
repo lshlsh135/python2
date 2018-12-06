@@ -21,4 +21,21 @@ kospi_day = pd.DataFrame(kospi_day, index = datetime['TRD_DATE'])
 
 
 
-base_data = kospi_day.iloc[len(kospi_day)-120:len(kospi_day),0]
+base_data = kospi_day.iloc[len(kospi_day)-120-60:len(kospi_day)-60,0]
+
+i=1
+compare_data = kospi_day.iloc[len(kospi_day)-1556-120:len(kospi_day)-1556,0]
+#두 지수를 비교하기 위해서는 시작을 100으로 만들어준다(index)
+base_data_index= base_data / base_data[-1] *100
+compare_data_index = compare_data / compare_data[-1] *100
+
+diff = base_data_index.reset_index(drop=True) - compare_data_index.reset_index(drop=True)
+diff_sq = diff**2
+
+#var_data = pd.concat([base_data_index.reset_index(drop=True),compare_data_index.reset_index(drop=True)])
+var_data = pd.concat([base_data.reset_index(drop=True),compare_data.reset_index(drop=True)])
+ivar = (var_data.std() / var_data.mean() *100 ) **2
+
+(diff_sq.sum() / ivar /120) ** (1/2)
+
+
