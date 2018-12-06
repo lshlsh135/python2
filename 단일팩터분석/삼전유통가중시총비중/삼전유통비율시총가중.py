@@ -247,3 +247,5 @@ for p in range(1,2):
             if len(save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)]) != 0:
                 locals()['save_data_{}'.format(p)].loc[pp,ppp]=save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values
 
+a= raw_data[raw_data['FLOAT_CAP'].notnull()]
+b=a.head(1000)
