@@ -85,11 +85,19 @@ class QVGSM_VALUE:
                 first_data = first_data[first_data[factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
-                q_temp = first_data[first_data['GICODE']=='A005930']
-                q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
-                samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
-                q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                q_1 = pd.concat([q_1,q_temp])                
+                if len(q_1[q_1['GICODE']=='A005930'])==0:
+                    
+                    q_temp = first_data[first_data['GICODE']=='A005930']
+                    q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
+                    samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
+                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
+                    q_1 = pd.concat([q_1,q_temp])
+                
+                else:
+                    q_1 = first_data[first_data['rnk']<=stock_num+1]
+                    samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
+                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
+                print(len(q_1))
                 try:
                     reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
                     rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
@@ -146,11 +154,19 @@ class QVGSM_VALUE:
                 first_data = first_data[first_data[factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
-                q_temp = first_data[first_data['GICODE']=='A005930']
-                q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
-                samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
-                q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                q_1 = pd.concat([q_1,q_temp])
+                if len(q_1[q_1['GICODE']=='A005930'])==0:
+                    
+                    q_temp = first_data[first_data['GICODE']=='A005930']
+                    q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
+                    samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
+                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
+                    q_1 = pd.concat([q_1,q_temp])
+                
+                else:
+                    q_1 = first_data[first_data['rnk']<=stock_num+1]
+                    samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
+                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
+                print(len(q_1))
                 try:
                     reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
                     rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
