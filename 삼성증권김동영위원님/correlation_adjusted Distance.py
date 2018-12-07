@@ -33,7 +33,8 @@ diff = base_data_index.reset_index(drop=True) - compare_data_index.reset_index(d
 diff_sq = diff**2
 
 #var_data = pd.concat([base_data_index.reset_index(drop=True),compare_data_index.reset_index(drop=True)])
-var_data = pd.concat([base_data.reset_index(drop=True),compare_data.reset_index(drop=True)])
+#var_data = pd.concat([base_data.reset_index(drop=True),compare_data.reset_index(drop=True)])
+var_data = kospi_day[(kospi_day.index>='2005-12-29')&(kospi_day.index<=base_data.index[-1])]
 ivar = (var_data.std() / var_data.mean() *100 ) **2
 
 (diff_sq.sum() / ivar /120) ** (1/2)
