@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Dec  7 15:54:31 2018
+
+@author: 지형범
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Dec  6 08:53:15 2018
 
 @author: 지형범
