@@ -222,30 +222,44 @@ for i in range(1,2):
 #    
 #    locals()['sharpe_{}'.format(i)] = np.sqrt(252)*(locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).mean() / (locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).std()
 
-wealth_1 = pd.read_pickle('div_yield_wealth')
-wealth_1 = pd.DataFrame(wealth_1)
-wealth_1 = pd.merge(wealth_1,kospi200_day,left_index=True, right_index=True, how='inner')
+#wealth_1 = pd.read_pickle('div_yield_wealth')
+#wealth_1 = pd.DataFrame(wealth_1)
+#wealth_1 = pd.merge(wealth_1,kospi200_day,left_index=True, right_index=True, how='inner')
+#
+#net_daily_gross_rtn = wealth_1.pct_change()+1
+#net_daily_gross_rtn.iloc[0,:]=1
+#net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn['rtn_d_cum'] - net_daily_gross_rtn['PRC']
+##net_wealth.to_pickle(str(factor))
+#
+#datetime=pd.DataFrame(pd.to_datetime(net_daily_gross_rtn.index)) # 월말 날짜를 뽑기위해 datetime으로 바꿔줌
+#net_daily_gross_rtn = pd.DataFrame(net_daily_gross_rtn, index = datetime[0]) # n_w의 index를 python의 date type로 바꿔줌
+#net_daily_gross_rtn = net_daily_gross_rtn['excess_daily_rtn']+1
+#
+#year_data=list(net_daily_gross_rtn.index.year.unique())
+#month_data=list(net_daily_gross_rtn.index.month.unique())
+#month_data.sort()
+#
+#for p in range(1,2):
+#    locals()['save_data_{}'.format(p)] = pd.DataFrame(data = np.zeros((len(year_data),len(month_data))), index = year_data, columns = month_data)
+#    save_data_temp = pd.DataFrame(net_daily_gross_rtn)
+#    for pp in year_data:
+#        for ppp in month_data:
+#            if len(save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)]) != 0:
+#                locals()['save_data_{}'.format(p)].loc[pp,ppp]=save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values
+#
+#a= raw_data[raw_data['FLOAT_CAP'].notnull()]
+#b=a.head(1000)
 
-net_daily_gross_rtn = wealth_1.pct_change()+1
-net_daily_gross_rtn.iloc[0,:]=1
-net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn['rtn_d_cum'] - net_daily_gross_rtn['PRC']
-#net_wealth.to_pickle(str(factor))
 
-datetime=pd.DataFrame(pd.to_datetime(net_daily_gross_rtn.index)) # 월말 날짜를 뽑기위해 datetime으로 바꿔줌
-net_daily_gross_rtn = pd.DataFrame(net_daily_gross_rtn, index = datetime[0]) # n_w의 index를 python의 date type로 바꿔줌
-net_daily_gross_rtn = net_daily_gross_rtn['excess_daily_rtn']+1
+a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
+mdd_traditional = (a.traditional_mdd()).min()
 
-year_data=list(net_daily_gross_rtn.index.year.unique())
-month_data=list(net_daily_gross_rtn.index.month.unique())
-month_data.sort()
+a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
+new_dd = a.new_drawdown()
+new_dd.iloc[:,0].min()
 
-for p in range(1,2):
-    locals()['save_data_{}'.format(p)] = pd.DataFrame(data = np.zeros((len(year_data),len(month_data))), index = year_data, columns = month_data)
-    save_data_temp = pd.DataFrame(net_daily_gross_rtn)
-    for pp in year_data:
-        for ppp in month_data:
-            if len(save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)]) != 0:
-                locals()['save_data_{}'.format(p)].loc[pp,ppp]=save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values
+a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
+daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
 
-a= raw_data[raw_data['FLOAT_CAP'].notnull()]
-b=a.head(1000)
+a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
+monthly_performance=a.Monthly_PF_EV()

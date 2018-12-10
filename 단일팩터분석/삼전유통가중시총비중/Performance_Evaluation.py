@@ -60,3 +60,50 @@ class Performance_Evaluation:
         dd = self.wealth.set_index('TRD_DATE_y')['dd']
            
         return(dd)
+        
+    def new_drawdown(self) :
+        self.wealth = pd.DataFrame(self.wealth)
+        ddd = pd.DataFrame(data = np.zeros(shape = (self.wealth.shape[0], self.wealth.shape[1])), index = self.wealth.index, columns = [self.wealth.columns])
+        
+        self.wealth = self.wealth.pct_change()
+        
+        
+#        wealth =  pd.DataFrame(wealth)
+        self.wealth[np.isnan(self.wealth)] = 0
+        
+        for j in range(0, self.wealth.shape[1]):
+            
+            if (self.wealth.iloc[0, j] > 0) :
+                ddd.iloc[0, j] = 0
+            else :
+                ddd.iloc[0, j] = self.wealth.iloc[0, j]
+                
+            for i in range(1 , len(self.wealth)):
+                temp_ddd = (1+ddd.iloc[i-1, j]) * (1+self.wealth.iloc[i, j]) -1
+                if (temp_ddd > 0) :
+                    ddd.iloc[i, j] = 0
+                else:
+                    ddd.iloc[i, j] = temp_ddd
+        
+        return(ddd)
+            
+    def daily_excess_rtn_cumsum(self):
+         
+        self.wealth = pd.merge(pd.DataFrame(self.wealth),self.kospi200_day,left_index=True, right_index=True, how='inner')
+        
+        net_daily_gross_rtn = self.wealth.pct_change()+1
+        net_daily_gross_rtn.iloc[0,:]=1
+        net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn['rtn_d_cum'] - net_daily_gross_rtn['PRC']
+        net_daily_gross_rtn['excess_daily_rtn_cum'] = net_daily_gross_rtn['excess_daily_rtn'].cumsum().fillna(0)
+        
+        return(net_daily_gross_rtn.loc[:,'excess_daily_rtn_cum'])
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
