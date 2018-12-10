@@ -42,7 +42,7 @@ import pandas as pd
 from drawdown import drawdown
 import copy
 
-class QVGSM_VALUE:
+class One_Factor_BackTest:
  
     def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data,oscore,momentum):
         stock_num = 20
@@ -58,7 +58,7 @@ class QVGSM_VALUE:
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
         if factor == 'EARNING_REVISION':
             start_n = 35
-    def QVGSM(self):
+    def Samsung_Neutral(self):
         
         for n in range(start_n,col_length): 
             if rebalancing_date.iloc[n,0][5:7] =='02':
