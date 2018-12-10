@@ -50,3 +50,13 @@ class Performance_Evaluation:
         win_rate = round(len(win_data[win_data.iloc[:,0]>1])/len(win_data),2)
         
         return win_rate
+    
+    def traditional_mdd(self):
+        self.wealth = self.wealth.reset_index()
+        self.wealth['dd'] = 0
+        for i in range(len(self.wealth)):
+            self.wealth.loc[i,'dd'] = self.wealth.iloc[i,1] / max(self.wealth.iloc[0:i+1,1])-1
+        
+        dd = self.wealth.set_index('index')['dd']
+           
+        return(dd)
