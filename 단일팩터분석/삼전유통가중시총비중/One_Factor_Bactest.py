@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Dec 10 17:39:51 2018
+
+@author: 지형범
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Dec  4 08:47:07 2018
 
 @author: 지형범
@@ -43,9 +50,13 @@ from Performance_Evaluation import Performance_Evaluation
 
 class One_Factor_BackTest:
  
-    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data,oscore,momentum):
-        stock_num = 20
-        day_date = kospi_day.reset_index()
+    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return):
+        self.raw_data = raw_data
+        self.rebalancing_date = rebalancing_date
+        self.stock_num = 20
+        self.kospi_day = kospi_day
+        day_date = self.kospi_day.reset_index()
+        daily_return = daily_return
         factor = 'EARNING_REVISION'
         col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
