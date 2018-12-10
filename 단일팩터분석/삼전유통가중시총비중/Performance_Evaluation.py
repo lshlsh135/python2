@@ -57,6 +57,6 @@ class Performance_Evaluation:
         for i in range(len(self.wealth)):
             self.wealth.loc[i,'dd'] = self.wealth.iloc[i,1] / max(self.wealth.iloc[0:i+1,1])-1
         
-        dd = self.wealth.set_index('index')['dd']
+        dd = self.wealth.set_index('TRD_DATE_y')['dd']
            
         return(dd)
