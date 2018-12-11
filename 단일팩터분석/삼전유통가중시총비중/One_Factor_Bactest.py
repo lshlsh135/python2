@@ -50,26 +50,27 @@ from Performance_Evaluation import Performance_Evaluation
 
 class One_Factor_BackTest:
  
-    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,factor):
+    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor):
         self.raw_data = raw_data
         self.rebalancing_date = rebalancing_date
         self.stock_num = 20
         self.kospi_day = kospi_day
+        self.kospi200_day = kospi200_day
         self.day_date = self.kospi_day.reset_index()
         self.daily_return = daily_return
         self.factor = factor
         self.col_length = len(self.rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         self.daily_date=pd.DataFrame(self.daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
-        for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
-            self.locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
-            self.locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
-            self.locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
-            self.locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
-            self.locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (self.daily_date.shape[0], self.daily_date.shape[1])),index = self.daily_date['TRD_DATE'])
+        
         if factor == 'EARNING_REVISION':
             self.start_n = 35
     def Samsung_Neutral(self):
-        
+        for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
+            locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
+            locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
+            locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
+            locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
+            locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (self.daily_date.shape[0], self.daily_date.shape[1])),index = self.daily_date['TRD_DATE'])
         for n in range(self.start_n,self.col_length): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
@@ -117,27 +118,27 @@ class One_Factor_BackTest:
                 for i in range(1,2):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = self.locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = self.locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/self.stock_num
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/self.stock_num
                     
                     
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
                    
-                    self.locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
+                    locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
                     
-                    self.locals()['end_wealth_{}'.format(i)] = self.locals()['wealth_{}'.format(i)][self.locals()['wealth_num_{}'.format(i)]][-1]
-                    self.locals()['wealth_num_{}'.format(i)]+=1
+                    locals()['end_wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)][locals()['wealth_num_{}'.format(i)]][-1]
+                    locals()['wealth_num_{}'.format(i)]+=1
                     
                     
                     
-                    if self.locals()['turno_{}'.format(i)] == 0:
-                        self.locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = 1
-                        self.locals()['turno_{}'.format(i)]+= 1
+                    if locals()['turno_{}'.format(i)] == 0:
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = 1
+                        locals()['turno_{}'.format(i)]+= 1
                     else:
                         turnover_data_sum=pd.merge(rst_rtn_d[rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],locals()['rst_rtn_d_past_{}'.format(i)][locals()['rst_rtn_d_past_{}'.format(i)]['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],how='outer',on='GICODE')
                         turnover_data_sum = turnover_data_sum.replace(np.nan,0)  
-                        self.locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
                         -turnover_data_sum['rtn_d_cum_y']/np.sum(turnover_data_sum['rtn_d_cum_y'])))
                     
                     
@@ -186,26 +187,26 @@ class One_Factor_BackTest:
                 for i in range(1,2):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = self.locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = self.locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/self.stock_num
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/self.stock_num
                     
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
                    
-                    self.locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
+                    locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
                     
-                    self.locals()['end_wealth_{}'.format(i)] = self.locals()['wealth_{}'.format(i)][self.locals()['wealth_num_{}'.format(i)]][-1]
-                    self.locals()['wealth_num_{}'.format(i)]+=1
+                    locals()['end_wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)][locals()['wealth_num_{}'.format(i)]][-1]
+                    locals()['wealth_num_{}'.format(i)]+=1
                     
                     
                     
-                    if self.locals()['turno_{}'.format(i)] == 0:
-                        self.locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = 1
-                        self.locals()['turno_{}'.format(i)]+= 1
+                    if locals()['turno_{}'.format(i)] == 0:
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = 1
+                        locals()['turno_{}'.format(i)]+= 1
                     else:
                         turnover_data_sum=pd.merge(rst_rtn_d[rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],locals()['rst_rtn_d_past_{}'.format(i)][locals()['rst_rtn_d_past_{}'.format(i)]['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],how='outer',on='GICODE')
                         turnover_data_sum = turnover_data_sum.replace(np.nan,0)  
-                        self.locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
                         -turnover_data_sum['rtn_d_cum_y']/np.sum(turnover_data_sum['rtn_d_cum_y'])))
                     
                     
@@ -215,13 +216,13 @@ class One_Factor_BackTest:
             
         for i in range(1,2):
         
-            self.locals()['wealth_{}'.format(i)] = pd.concat(self.locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
-            self.locals()['wealth_{}'.format(i)]=self.locals()['wealth_{}'.format(i)][~self.locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
-            locals()['daily_gross_rtn_{}'.format(i)]=pd.DataFrame(self.locals()['wealth_{}'.format(i)].pct_change()+1) # wealth의 누적에서 일별 gross 수익률을 구함.
+            locals()['wealth_{}'.format(i)] = pd.concat(locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
+            locals()['wealth_{}'.format(i)]=locals()['wealth_{}'.format(i)][~locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
+            locals()['daily_gross_rtn_{}'.format(i)]=pd.DataFrame(locals()['wealth_{}'.format(i)].pct_change()+1) # wealth의 누적에서 일별 gross 수익률을 구함.
             locals()['daily_gross_rtn_{}'.format(i)][np.isnan(locals()['daily_gross_rtn_{}'.format(i)])] = 0             # 첫번째 수익률이 nan이기 떄문에 바꿔준다.
-            self.locals()['turnover_day_{}'.format(i)] = self.locals()['turnover_day_{}'.format(i)].shift(1) * 0.005 # turnover 구한거를 리밸런싱 다음날에 반영해준다.
+            locals()['turnover_day_{}'.format(i)] = locals()['turnover_day_{}'.format(i)].shift(1) * 0.005 # turnover 구한거를 리밸런싱 다음날에 반영해준다.
             locals()['sub_{}'.format(i)] = pd.merge(locals()['daily_gross_rtn_{}'.format(i)],
-                                                    self.locals()['turnover_day_{}'.format(i)],left_index=True,right_index=True)
+                                                    locals()['turnover_day_{}'.format(i)],left_index=True,right_index=True)
             locals()['net_daily_gross_rtn_{}'.format(i)]=locals()['sub_{}'.format(i)].iloc[:,0]-locals()['sub_{}'.format(i)].iloc[:,1]
             locals()['net_daily_gross_rtn_{}'.format(i)][0] = 1 # 누적 wealth를 구하기 위해 첫날 수익률을 1이라고 가정.
             locals()['net_wealth_{}'.format(i)]=locals()['net_daily_gross_rtn_{}'.format(i)].cumprod()
@@ -261,15 +262,17 @@ class One_Factor_BackTest:
 #b=a.head(1000)
 
 
-        a = Performance_Evaluation(self.locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
         mdd_traditional = (a.traditional_mdd()).min()
         
-        a = Performance_Evaluation(self.locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
         new_dd = a.new_drawdown()
         new_dd.iloc[:,0].min()
         
-        a = Performance_Evaluation(self.locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
         daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
         
-        a = Performance_Evaluation(self.locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
         monthly_performance=a.Monthly_PF_EV()
+        
+        return locals()['wealth_{}'.format(i)], mdd_traditional, new_dd.iloc[:,0].min(), daily_excess_rtn_cumulative_sum, monthly_performance
