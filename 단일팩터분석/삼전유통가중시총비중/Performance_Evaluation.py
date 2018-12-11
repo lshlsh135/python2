@@ -17,7 +17,7 @@ class Performance_Evaluation:
 
         net_daily_gross_rtn = self.wealth.pct_change()+1
         net_daily_gross_rtn.iloc[0,:]=1
-        net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn['rtn_d_cum'] - net_daily_gross_rtn['PRC']
+        net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn[net_daily_gross_rtn.columns[0]] - net_daily_gross_rtn['PRC']
         
         datetime=pd.DataFrame(pd.to_datetime(net_daily_gross_rtn.index)) # 월말 날짜를 뽑기위해 datetime으로 바꿔줌
         net_daily_gross_rtn = pd.DataFrame(net_daily_gross_rtn, index = datetime[0]) # n_w의 index를 python의 date type로 바꿔줌
