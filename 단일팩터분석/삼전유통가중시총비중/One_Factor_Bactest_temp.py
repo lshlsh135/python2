@@ -46,7 +46,8 @@ class One_Factor_BackTest:
     def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data,oscore,momentum):
         stock_num = 20
         day_date = kospi_day.reset_index()
-        factor = 'EARNING_REVISION'
+#        factor = 'EARNING_REVISION'
+        factor = '1/per'
         col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
         for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
@@ -55,8 +56,14 @@ class One_Factor_BackTest:
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
+        start_n = 13
         if factor == 'EARNING_REVISION':
             start_n = 35
+        if factor == 'div_yield':
+            start_n = 13
+        if factor == '1/per_12mfwd':
+            start_n = 13
+            
     def Samsung_Neutral(self):
         
         for n in range(start_n,col_length): 
@@ -73,11 +80,14 @@ class One_Factor_BackTest:
                 first_data['MARKET_CAP_COM'] = first_data['MARKET_CAP_COM_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
+                first_data['NI'] = first_data['NI_2LEAD']
                 first_data['FLOAT_CAP'] = first_data['FLOAT_CAP_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP_COM']>100000000000]
                 
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_adj_12mfwd']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_12mfwd']= first_data['NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per']= first_data['NI']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
@@ -146,7 +156,9 @@ class One_Factor_BackTest:
                 first_data = pd.merge(first_data,second_data,how='outer',on='GICODE')
                 first_data = first_data[(first_data['TRD_DATE_OLD_x'].notnull())&(first_data['TRD_DATE_OLD_y'].notnull())]
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_adj_12mfwd']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_12mfwd']= first_data['NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per']= first_data['NI']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
@@ -261,4 +273,18 @@ a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
 daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
 
 a = Performance_Evaluation(wealth_1,kospi_day,kospi200_day)
+monthly_performance=a.Monthly_PF_EV()
+
+
+a = Performance_Evaluation(net_wealth_1,kospi_day,kospi200_day)
+mdd_traditional = (a.traditional_mdd()).min()
+
+a = Performance_Evaluation(net_wealth_1,kospi_day,kospi200_day)
+new_dd = a.new_drawdown()
+new_dd.iloc[:,0].min()
+
+a = Performance_Evaluation(net_wealth_1,kospi_day,kospi200_day)
+daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
+
+a = Performance_Evaluation(net_wealth_1,kospi_day,kospi200_day)
 monthly_performance=a.Monthly_PF_EV()

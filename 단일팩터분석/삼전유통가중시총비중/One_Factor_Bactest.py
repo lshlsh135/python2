@@ -50,7 +50,7 @@ from Performance_Evaluation import Performance_Evaluation
 
 class One_Factor_BackTest:
  
-    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor):
+    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor,net):
         self.raw_data = raw_data
         self.rebalancing_date = rebalancing_date
         self.stock_num = 20
@@ -59,11 +59,14 @@ class One_Factor_BackTest:
         self.day_date = self.kospi_day.reset_index()
         self.daily_return = daily_return
         self.factor = factor
+        self.net = net
         self.col_length = len(self.rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         self.daily_date=pd.DataFrame(self.daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
-        
+        self.start_n = 13
         if factor == 'EARNING_REVISION':
             self.start_n = 35
+        if factor == 'div_yield':
+            self.start_n = 13
     def Samsung_Neutral(self):
         for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
             locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
@@ -71,6 +74,7 @@ class One_Factor_BackTest:
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (self.daily_date.shape[0], self.daily_date.shape[1])),index = self.daily_date['TRD_DATE'])
+        result = dict()
         for n in range(self.start_n,self.col_length): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
@@ -85,11 +89,14 @@ class One_Factor_BackTest:
                 first_data['MARKET_CAP_COM'] = first_data['MARKET_CAP_COM_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
+                first_data['NI'] = first_data['NI_2LEAD']
                 first_data['FLOAT_CAP'] = first_data['FLOAT_CAP_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP_COM']>100000000000]
                 
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_adj_12mfwd']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_12mfwd']= first_data['NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per']= first_data['NI']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
@@ -158,7 +165,9 @@ class One_Factor_BackTest:
                 first_data = pd.merge(first_data,second_data,how='outer',on='GICODE')
                 first_data = first_data[(first_data['TRD_DATE_OLD_x'].notnull())&(first_data['TRD_DATE_OLD_y'].notnull())]
                 first_data['div_yield']=first_data['CASH_DIV_COM_Y']/first_data['MARKET_CAP_COM']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_adj_12mfwd']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per_12mfwd']= first_data['NI_12M_FWD']/first_data['MARKET_CAP_COM']
+                first_data['1/per']= first_data['NI']/first_data['MARKET_CAP_COM']
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
@@ -260,19 +269,61 @@ class One_Factor_BackTest:
 #
 #a= raw_data[raw_data['FLOAT_CAP'].notnull()]
 #b=a.head(1000)
-
-
-        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-        mdd_traditional = (a.traditional_mdd()).min()
-        
-        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-        new_dd = a.new_drawdown()
-        new_dd.iloc[:,0].min()
-        
-        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-        daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
-        
-        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-        monthly_performance=a.Monthly_PF_EV()
-        
-        return locals()['wealth_{}'.format(i)], mdd_traditional, new_dd.iloc[:,0].min(), daily_excess_rtn_cumulative_sum, monthly_performance
+        if self.net == 0:
+            result['wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)]
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            mdd_traditional = (a.traditional_mdd()).min()
+            
+            result['mdd_traditional'] = mdd_traditional
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            new_dd = a.new_drawdown()
+            result['new_mdd'] = new_dd.iloc[:,0].min()
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
+            
+            result['daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            monthly_performance=a.Monthly_PF_EV()
+            result['monthly_performance'] = monthly_performance
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
+            result['monthly_win_ratio'] = monthly_win_ratio
+            
+            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            sharpe_ratio = a.Sharpe_Ratio()
+            result['sharpe_ratio'] = sharpe_ratio
+            
+        else:
+            result['net_wealth_{}'.format(i)] = locals()['net_wealth_{}'.format(i)]
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            mdd_traditional = (a.traditional_mdd()).min()
+            
+            result['mdd_traditional'] = mdd_traditional
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            new_dd = a.new_drawdown()
+            result['new_mdd'] = new_dd.iloc[:,0].min()
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
+            
+            result['daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            monthly_performance=a.Monthly_PF_EV()
+            result['monthly_performance'] = monthly_performance
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
+            result['monthly_win_ratio'] = monthly_win_ratio
+            
+            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+            sharpe_ratio = a.Sharpe_Ratio()
+            result['sharpe_ratio'] = sharpe_ratio
+        return result

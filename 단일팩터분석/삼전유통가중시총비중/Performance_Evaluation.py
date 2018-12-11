@@ -57,7 +57,7 @@ class Performance_Evaluation:
         for i in range(len(self.wealth)):
             self.wealth.loc[i,'dd'] = self.wealth.iloc[i,1] / max(self.wealth.iloc[0:i+1,1])-1
         
-        dd = self.wealth.set_index('TRD_DATE_y')['dd']
+        dd = self.wealth.set_index(self.wealth.columns[0])['dd']
            
         return(dd)
         
@@ -93,13 +93,16 @@ class Performance_Evaluation:
         
         net_daily_gross_rtn = self.wealth.pct_change()+1
         net_daily_gross_rtn.iloc[0,:]=1
-        net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn['rtn_d_cum'] - net_daily_gross_rtn['PRC']
+        net_daily_gross_rtn['excess_daily_rtn'] = net_daily_gross_rtn[net_daily_gross_rtn.columns[0]] - net_daily_gross_rtn['PRC']
         net_daily_gross_rtn['excess_daily_rtn_cum'] = net_daily_gross_rtn['excess_daily_rtn'].cumsum().fillna(0)
         
-        return(net_daily_gross_rtn.loc[:,'excess_daily_rtn_cum'])
+        return net_daily_gross_rtn.loc[:,'excess_daily_rtn_cum']
         
+    def Sharpe_Ratio(self):
+        daily_gross_rtn = self.wealth.pct_change()+1
+        sharpe_ratio = np.sqrt(252)*(daily_gross_rtn[1:]-1).mean() / (daily_gross_rtn[1:]-1).std()
         
-        
+        return sharpe_ratio
         
         
         
