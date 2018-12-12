@@ -50,7 +50,7 @@ from Performance_Evaluation import Performance_Evaluation
 
 class One_Factor_BackTest:
  
-    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor,net):
+    def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor):
         self.raw_data = raw_data
         self.rebalancing_date = rebalancing_date
         self.stock_num = 20
@@ -59,11 +59,10 @@ class One_Factor_BackTest:
         self.day_date = self.kospi_day.reset_index()
         self.daily_return = daily_return
         self.factor = factor
-        self.net = net
         self.col_length = len(self.rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         self.daily_date=pd.DataFrame(self.daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
         self.start_n = 13
-        if factor == 'EARNING_REVISION':
+        if (factor == 'EARNING_REVISION')|(factor == 'EARNING_REVISION2'):
             self.start_n = 35
         if factor == 'div_yield':
             self.start_n = 13
@@ -100,6 +99,7 @@ class One_Factor_BackTest:
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
+                first_data['EARNING_REVISION2'] = first_data['EPS_UPDOWN_FY2']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[self.factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,self.factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=self.stock_num]
@@ -171,6 +171,7 @@ class One_Factor_BackTest:
                 first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
+                first_data['EARNING_REVISION2'] = first_data['EPS_UPDOWN_FY2']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[self.factor].notnull()]
                 first_data = first_data.assign(rnk = first_data.loc[:,self.factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=self.stock_num]
@@ -269,61 +270,61 @@ class One_Factor_BackTest:
 #
 #a= raw_data[raw_data['FLOAT_CAP'].notnull()]
 #b=a.head(1000)
-        if self.net == 0:
-            result['wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)]
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            mdd_traditional = (a.traditional_mdd()).min()
-            
-            result['mdd_traditional'] = mdd_traditional
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            new_dd = a.new_drawdown()
-            result['new_mdd'] = new_dd.iloc[:,0].min()
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
-            
-            result['daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            monthly_performance=a.Monthly_PF_EV()
-            result['monthly_performance'] = monthly_performance
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
-            result['monthly_win_ratio'] = monthly_win_ratio
-            
-            a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            sharpe_ratio = a.Sharpe_Ratio()
-            result['sharpe_ratio'] = sharpe_ratio
-            
-        else:
-            result['net_wealth_{}'.format(i)] = locals()['net_wealth_{}'.format(i)]
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            mdd_traditional = (a.traditional_mdd()).min()
-            
-            result['mdd_traditional'] = mdd_traditional
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            new_dd = a.new_drawdown()
-            result['new_mdd'] = new_dd.iloc[:,0].min()
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
-            
-            result['daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            monthly_performance=a.Monthly_PF_EV()
-            result['monthly_performance'] = monthly_performance
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
-            result['monthly_win_ratio'] = monthly_win_ratio
-            
-            a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
-            sharpe_ratio = a.Sharpe_Ratio()
-            result['sharpe_ratio'] = sharpe_ratio
+
+        result['wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)]
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        mdd_traditional = (a.traditional_mdd()).min()
+        
+        result['mdd_traditional'] = mdd_traditional
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        new_dd = a.new_drawdown()
+        result['new_mdd'] = new_dd.iloc[:,0].min()
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
+        
+        result['daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        monthly_performance=a.Monthly_PF_EV()
+        result['monthly_performance'] = monthly_performance
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
+        result['monthly_win_ratio'] = monthly_win_ratio
+        
+        a = Performance_Evaluation(locals()['wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        sharpe_ratio = a.Sharpe_Ratio()
+        result['sharpe_ratio'] = sharpe_ratio
+        
+
+        result['net_wealth_{}'.format(i)] = locals()['net_wealth_{}'.format(i)]
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        mdd_traditional = (a.traditional_mdd()).min()
+        
+        result['net_mdd_traditional'] = mdd_traditional
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        new_dd = a.new_drawdown()
+        result['net_new_mdd'] = new_dd.iloc[:,0].min()
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        daily_excess_rtn_cumulative_sum = a.daily_excess_rtn_cumsum()
+        
+        result['net_daily_excess_rtn_cumulative_sum'] = daily_excess_rtn_cumulative_sum
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        monthly_performance=a.Monthly_PF_EV()
+        result['net_monthly_performance'] = monthly_performance
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        monthly_win_ratio = a.Monthly_Winning_ratio(result['monthly_performance'])
+        result['net_monthly_win_ratio'] = monthly_win_ratio
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        sharpe_ratio = a.Sharpe_Ratio()
+        result['net_sharpe_ratio'] = sharpe_ratio
         return result
