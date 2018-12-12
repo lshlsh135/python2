@@ -53,7 +53,7 @@ class One_Factor_BackTest:
     def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor):
         self.raw_data = raw_data
         self.rebalancing_date = rebalancing_date
-        self.stock_num = 20
+        self.stock_num = stock_num
         self.kospi_day = kospi_day
         self.kospi200_day = kospi200_day
         self.day_date = self.kospi_day.reset_index()
