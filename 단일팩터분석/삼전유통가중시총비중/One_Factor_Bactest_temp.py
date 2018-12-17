@@ -46,10 +46,10 @@ import copy
 class One_Factor_BackTest:
  
     def __init__(self,stock_num,raw_data,rebalancing_date,kospi_day,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data,oscore,momentum):
-        stock_num = 40
+        stock_num = 20
         day_date = kospi_day.reset_index()
 #        factor = 'EARNING_REVISION'
-        factor = 'MARKET_CAP_COM'
+        factor = '1/per'
         col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
         for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
@@ -94,7 +94,7 @@ class One_Factor_BackTest:
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[factor].notnull()]
-                first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = True))
+                first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
                 if len(q_1[q_1['GICODE']=='A005930'])==0:
                     
@@ -165,7 +165,7 @@ class One_Factor_BackTest:
                 first_data['FLOAT_WEIGHTS'] = first_data['FLOAT_CAP']/first_data['FLOAT_CAP'].sum()
                 first_data['EARNING_REVISION'] = first_data['EPS_UPDOWN_FY1']/first_data['OPINION_COM_NUM']
                 first_data = first_data[first_data[factor].notnull()]
-                first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = True))
+                first_data = first_data.assign(rnk = first_data.loc[:,factor].rank(method='first',ascending = False))
                 q_1 = first_data[first_data['rnk']<=stock_num]
                 if len(q_1[q_1['GICODE']=='A005930'])==0:
                     
