@@ -173,7 +173,7 @@ raw_data = pd.merge(raw_data,consensus,on=['TRD_DATE','GICODE'])
 
 raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경
 
-factor = 'EARNING_REVISION2'
-
-a = One_Factor_BackTest(20,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,factor)
-c = a.Samsung_Neutral()
+factor = ['1/per','1/pbr','div_yield','EARNING_REVISION']
+for i in factor:
+    a = One_Factor_BackTest(20,raw_data,rebalancing_date,kospi_day,kospi200_day,daily_return,i)
+    locals()['c_{}'.format(i)] = a.Samsung_Neutral()

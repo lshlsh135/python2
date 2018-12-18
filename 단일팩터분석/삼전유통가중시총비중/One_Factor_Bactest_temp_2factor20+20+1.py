@@ -142,7 +142,7 @@ class One_Factor_BackTest:
                     q_1 = pd.concat([q_1,q_temp])
                 
                 else:
-                    q_1 = first_data[first_data['rnk']<=stock_num+1]
+                    
                     samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
                     q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
                 print(len(q_1))
@@ -230,7 +230,7 @@ class One_Factor_BackTest:
                     q_1 = pd.concat([q_1,q_temp])
                 
                 else:
-                    q_1 = first_data[first_data['rnk']<=stock_num+1]
+                    
                     samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
                     q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
                 print(len(q_1))
@@ -373,4 +373,9 @@ class One_Factor_BackTest:
         a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],kospi_day,kospi200_day)
         sharpe_ratio = a.Sharpe_Ratio()
         result['net_sharpe_ratio'] = sharpe_ratio
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],kospi_day,kospi200_day)
+        month_list = [12,24,36,60,211]
+        make_tables = a.Make_Tables(month_list)
+        result['Make_Tables'] = make_tables
         return result

@@ -327,4 +327,9 @@ class One_Factor_BackTest:
         a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
         sharpe_ratio = a.Sharpe_Ratio()
         result['net_sharpe_ratio'] = sharpe_ratio
+        
+        a = Performance_Evaluation(locals()['net_wealth_{}'.format(i)],self.kospi_day,self.kospi200_day)
+        month_list = [12,24,36,60,211]
+        make_tables = a.Make_Tables(month_list)
+        result['Make_Tables'] = make_tables
         return result
