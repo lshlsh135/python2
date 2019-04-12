@@ -53,7 +53,15 @@ class QVGSM_VALUE:
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
-
+    
+    def set_universe(uni,first_data):
+        first_data = first_data
+        if uni == "코스피200" :
+            first_data = first_data[first_data['ISKOSPI200']==1]
+        elif uni == "코스피":
+            first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+        return first_data
+        
     def QVGSM(self):
         
         for n in range(20,col_length): 
@@ -61,6 +69,7 @@ class QVGSM_VALUE:
                 n-=1
     
                 first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
+                a = set_universe("코스피",first_data)
                 first_data = first_data[first_data['ISKOSPI200']==1]
                 
                 first_data['MARKET_CAP'] = first_data['MARKET_CAP_2LEAD']

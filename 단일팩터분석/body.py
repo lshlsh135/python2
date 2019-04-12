@@ -69,7 +69,7 @@ from calculate_bm_updown import calculate_bm_updown
 cx0=cx_Oracle.makedsn("localhost",1521,"xe")
 connection = cx_Oracle.connect("lshlsh135","2tkdgns2",cx0) #이게 실행이 안될때가 있는데
 #그때는 services에 들어가서 oracle listner를 실행시켜줘야함
-cpi_data = pd.read_sql("""select * from cpi_20180928""",con=connection)
+cpi_data = pd.read_sql("""select * from cpi_20181130""",con=connection)
 cpi_data.iloc[107,0] = '2009-12-30'
 cpi_data.iloc[119,0] = '2010-12-30'
 cpi_data.iloc[131,0] = '2011-12-29'
@@ -83,12 +83,12 @@ cpi_data.iloc[203,0] = '2017-12-28'
 
 
 
-kospi_day = pd.read_sql("""select * from kospi_day_prc_20180928""",con=connection) # 코스피 일별 종가
+kospi_day = pd.read_sql("""select * from kospi_day_prc_20181130""",con=connection) # 코스피 일별 종가
 kospi_day.set_index('TRD_DATE',inplace=True)
-kospi200_day = pd.read_sql("""select * from kospi200_day_prc_20180928""",con=connection) # 코스피 일별 종가
+kospi200_day = pd.read_sql("""select * from kospi200_day_prc_20181130""",con=connection) # 코스피 일별 종가
 kospi200_day.set_index('TRD_DATE',inplace=True)
-a=calculate_bm_updown(kospi200_day,net_wealth)
-a.make_kospi200_plot()
+#a=calculate_bm_updown(kospi200_day,net_wealth)
+#a.make_kospi200_plot()
 #kospi_quarter = pd.read_sql("""select * from kospi_quarter_return_20180928""",con=connection)
 #kospi_month = pd.read_sql("""select * from kospi_month_return_20180928""",con=connection)
 #DATA를 가져온다!!
@@ -96,27 +96,28 @@ kospi = pd.read_sql("""select lead(trd_date,1) over(partition by gicode order by
                     lead(NI_12M_FWD,1) over(partition by gicode order by trd_date) NI_12M_FWD,lead(NI_12M_FWD,2) over(partition by gicode order by trd_date) NI_12M_FWD_2lead,                    
                     adj_prc/lag(adj_prc,12) over(partition by gicode order by trd_date) rtn_12m,
                     iskospi200, cash_div_com_y,lead(market_cap_com,1) over(partition by gicode order by trd_date) market_cap_com,lead(market_cap_com,2) over(partition by gicode order by trd_date) market_cap_com_2lead,
-                    lead(float_cap,1) over(partition by gicode order by trd_date) float_cap,lead(float_cap,2) over(partition by gicode order by trd_date) float_cap_2lead
-                    from kospi_20180928""",con=connection)
+                    lead(float_cap,1) over(partition by gicode order by trd_date) float_cap,lead(float_cap,2) over(partition by gicode order by trd_date) float_cap_2lead, com_trd_volume_20day_avg
+                    from kospi_20181130""",con=connection)
 kosdaq = pd.read_sql("""select lead(trd_date,1) over(partition by gicode order by trd_date) trd_date,trd_date as trd_date_old, gicode, co_nm,iskosdaq,pretax_ni_ttm, wics_mid,wics_big,cap_size,EQUITY,CFO_TTM,cash_div_com,SALES_TTM,lead(ADJ_NI_12M_FWD,1) over(partition by gicode order by trd_date) ADJ_NI_12M_FWD,lead(ADJ_NI_12M_FWD,2) over(partition by gicode order by trd_date) ADJ_NI_12M_FWD_2lead,lead(market_cap,1) over(partition by gicode order by trd_date) market_cap,lead(market_cap,2) over(partition by gicode order by trd_date) market_cap_2lead,adj_prc, asset,asset - equity as liab,ni,liq_equity,liq_debt,(NI-lag(ni,3) over(partition by gicode order by trd_date))/ (ABS(ni) + abs(lag(ni,3) over(partition by gicode order by trd_date))) as chin,lag(ni,12) over(partition by gicode order by trd_date) as ni_1y, gross_profit_ttm,
                     lead(NI_12M_FWD,1) over(partition by gicode order by trd_date) NI_12M_FWD,lead(NI_12M_FWD,2) over(partition by gicode order by trd_date) NI_12M_FWD_2lead,                    
                      adj_prc/lag(adj_prc,12) over(partition by gicode order by trd_date) rtn_12m,
                      iskospi200,  cash_div_com_y,lead(market_cap_com,1) over(partition by gicode order by trd_date) market_cap_com,lead(market_cap_com,2) over(partition by gicode order by trd_date) market_cap_com_2lead,
-                     lead(float_cap,1) over(partition by gicode order by trd_date) float_cap,lead(float_cap,2) over(partition by gicode order by trd_date) float_cap_2lead
-                     from kosdaq_20180928""",con=connection)
-kospi_temp = pd.read_sql("""select trd_date, gicode, co_nm, jiju from kospi_20180928_temp""",con=connection)
-kosdaq_temp = pd.read_sql("""select trd_date, gicode, co_nm, jiju from kosdaq_20180928_temp""",con=connection)
+                     lead(float_cap,1) over(partition by gicode order by trd_date) float_cap,lead(float_cap,2) over(partition by gicode order by trd_date) float_cap_2lead, com_trd_volume_20day_avg
+                     from kosdaq_20181130""",con=connection)
+kospi_temp = pd.read_sql("""select trd_date, gicode, co_nm, jiju from kospi_20181130_temp""",con=connection)
+kosdaq_temp = pd.read_sql("""select trd_date, gicode, co_nm, jiju from kosdaq_20181130_temp""",con=connection)
 kospi = pd.merge(kospi,kospi_temp,on=['TRD_DATE','GICODE'])
 kosdaq = pd.merge(kosdaq,kosdaq_temp,on=['TRD_DATE','GICODE'])
 
-rebalancing_date = pd.read_sql("""select * from month_date_20180928""",con=connection)
+rebalancing_date = pd.read_sql("""select * from month_date_20181130""",con=connection)
 #month_date = pd.read_sql("""select * from month_date_20180928""",con=connection)
 #wics_mid = pd.read_sql("""select * from wics_mid_20180928""",con=connection)
 
 
 #kospi_daily_return = pd.read_sql("""select * from kospi_daily_stock """,con=connection)
 #kosdaq_daily_return = pd.read_sql("""select * from kosdaq_daily_stock """,con=connection)
-daily_return = pd.concat([pd.read_sql("""select * from kospi_daily_stock_20180928 """,con=connection),pd.read_sql("""select * from kosdaq_daily_stock_20180928 """,con=connection)],axis=0,ignore_index=True).drop_duplicates()
+daily_return = pd.read_sql("""select trd_date, gicode, co_nm, adj_prc_d, lag(adj_prc_d, 252) over(partition by gicode order by trd_date) adj_prc_d_252 from kospi_daily_stock_20180928 """,con=connection).drop_duplicates()
+
 daily_return = daily_return[daily_return['ADJ_PRC_D'].notnull()] # 메모리 사용량을 줄이기 위해서 실행
 #daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
 #wealth = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'], columns = ['RTN_D_CUM'])
@@ -124,13 +125,13 @@ daily_return = daily_return[daily_return['ADJ_PRC_D'].notnull()] # 메모리 사
 raw_data = pd.concat([kospi,kosdaq],axis=0,ignore_index=True).drop_duplicates()   #왜인지 모르겠는데 db에 중복된 정보가 들어가있네 ..? 
 col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
 
-wics_mid = pd.read_sql("""select distinct wics_mid from kospi_20180928""",con=connection)[1:]
+wics_mid = pd.read_sql("""select distinct wics_mid from kospi_20181130""",con=connection)[1:]
 
 
 for i in range(1,6):
     locals()['wics_mid_df_{}'.format(i)]=pd.DataFrame(data = np.zeros((wics_mid.shape[0],0)),index = wics_mid['WICS_MID'])
     
-wics_big = pd.read_sql("""select distinct wics_big from kosdaq_20180928""",con=connection)[1:]
+wics_big = pd.read_sql("""select distinct wics_big from kosdaq_20181130""",con=connection)[1:]
 
 
 for i in range(1,6):
