@@ -56,7 +56,7 @@ class QVGSM_VALUE:
 
     def QVGSM(self):
         
-        for n in range(20,col_length-2): 
+        for n in range(20,col_length-3): 
             if rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
