@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Apr 12 15:45:47 2019
+
+@author: 지형범
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Nov 13 13:18:35 2018
 
 @author: 지형범
@@ -53,7 +60,34 @@ class QVGSM_VALUE:
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
+    
+    def set_universe(uni,first_data):
+        first_data = first_data
+        if uni == "코스피200" :
+            first_data = first_data[first_data['ISKOSPI200']==1]
+        elif uni == "코스피":
+            first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+        return first_data
+        
+    def set_factors(factor,first_data): # 2매달 바뀌는 친구들은 제외
+        if factor == '1/per':
+            first_data[factor] = first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
+        elif factor == '1/pbr':
+            first_data[factor] = first_data['EQUITY']/first_data['MARKET_CAP']
+        elif factor == 'div_yield':
+            first_data[factor]=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
+        first_data = first_data[first_data[factor].notnull()]
+        return first_data
 
+    def set_daily_rtn(day_date,daily_return,rebalancing_date,n):
+        try:
+            reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
+            rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+        except:
+            rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+2,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+           
+        return rtn_d_need
+    
     def QVGSM(self):
         
         for n in range(20,col_length-2): 
@@ -61,18 +95,16 @@ class QVGSM_VALUE:
                 n-=1
     
                 first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
-                first_data = first_data[first_data['ISKOSPI200']==1]
-                
+                first_data = set_universe("코스피200",first_data)
+                                
                 first_data['MARKET_CAP'] = first_data['MARKET_CAP_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP']>100000000000]
                 
-                first_data['div_yield']=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
-                first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP']
+                first_data = set_factors('1/per',first_data)
+
                 
-                first_data = first_data[first_data[factor].notnull()]
 
                 for i in range(1,5):
                     locals()['q_{}'.format(i)]=first_data[(first_data[factor]>first_data[factor].quantile(1-0.2*(i)))
@@ -88,11 +120,8 @@ class QVGSM_VALUE:
                 for i in range(1,6):
                     locals()['wics_big_df_{}'.format(i)] = pd.merge(locals()['wics_big_df_{}'.format(i)],pd.DataFrame(data = locals()['q_{}'.format(i)].groupby('WICS_BIG').count().iloc[:,0]).rename(columns={'TRD_DATE':n}),left_index=True,right_index=True,how='left')            
 
-                try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+2,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                rtn_d_need = set_daily_rtn(day_date,daily_return,rebalancing_date,n)
+                
                 
                 for i in range(1,6):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
@@ -126,12 +155,8 @@ class QVGSM_VALUE:
                 
             else:
                 first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
-                first_data = first_data[first_data['ISKOSPI200']==1]
-                first_data['div_yield']=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
-                first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP']
-               
-                first_data = first_data[first_data[factor].notnull()]
+                first_data = set_universe("코스피200",first_data)
+                first_data = set_factors('1/per',first_data)
 
                 for i in range(1,5):
                     locals()['q_{}'.format(i)]=first_data[(first_data[factor]>first_data[factor].quantile(1-0.2*(i)))
@@ -146,13 +171,8 @@ class QVGSM_VALUE:
                 for i in range(1,6):
                     locals()['wics_big_df_{}'.format(i)] = pd.merge(locals()['wics_big_df_{}'.format(i)],pd.DataFrame(data = locals()['q_{}'.format(i)].groupby('WICS_BIG').count().iloc[:,0]).rename(columns={'TRD_DATE':n}),left_index=True,right_index=True,how='left')            
 
-                
-                try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+1,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                
+                rtn_d_need = set_daily_rtn(day_date,daily_return,rebalancing_date,n)
+
                 for i in range(1,6):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
