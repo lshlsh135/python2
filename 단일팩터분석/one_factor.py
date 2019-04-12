@@ -62,6 +62,17 @@ class QVGSM_VALUE:
             first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
         return first_data
         
+    def set_factors(factor,first_data): # 2매달 바뀌는 친구들은 제외
+        if factor == '1/per':
+            first_data[factor] = first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
+        elif factor == '1/pbr':
+            first_data[factor] = first_data['EQUITY']/first_data['MARKET_CAP']
+        elif factor == 'div_yield':
+            first_data[factor]=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
+        first_data = first_data[first_data[factor].notnull()]
+        return first_data
+        
+        
     def QVGSM(self):
         
         for n in range(20,col_length): 
@@ -69,7 +80,7 @@ class QVGSM_VALUE:
                 n-=1
     
                 first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
-                a = set_universe("코스피",first_data)
+#                a = set_universe("코스피",first_data)
                 first_data = first_data[first_data['ISKOSPI200']==1]
                 
                 first_data['MARKET_CAP'] = first_data['MARKET_CAP_2LEAD']
@@ -77,11 +88,9 @@ class QVGSM_VALUE:
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP']>100000000000]
                 
-                first_data['div_yield']=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
-                first_data['1/per']= first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
-                first_data['1/pbr'] = first_data['EQUITY']/first_data['MARKET_CAP']
+                first_data = set_factors('div_yield',first_data)
+
                 
-                first_data = first_data[first_data[factor].notnull()]
 
                 for i in range(1,5):
                     locals()['q_{}'.format(i)]=first_data[(first_data[factor]>first_data[factor].quantile(1-0.2*(i)))
