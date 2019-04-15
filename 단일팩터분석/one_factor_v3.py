@@ -131,6 +131,7 @@ class QVGSM_VALUE:
                 for i in range(1,6):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
+                    rst_rtn_d['rtn_d_excess_sum'] = rst_rtn_d.groupby('GICODE')['rtn_d'].apply(lambda x: (x-1).cumsum()) # 수익률의 단순 합을 구하기 위해서 만듬
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  / len(locals()['q_{}'.format(i)])
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
