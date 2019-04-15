@@ -229,7 +229,7 @@ net_wealth.columns = range(1,6)
 net_daily_gross_rtn = net_wealth.pct_change()+1
 net_daily_gross_rtn.iloc[0,:]=1
 
-net_wealth.to_pickle(str(factor))
+#net_wealth.to_pickle(str(factor))
 
 datetime=pd.DataFrame(pd.to_datetime(net_daily_gross_rtn.index)) # 월말 날짜를 뽑기위해 datetime으로 바꿔줌
 net_daily_gross_rtn = pd.DataFrame(net_daily_gross_rtn, index = datetime['TRD_DATE_y']) # n_w의 index를 python의 date type로 바꿔줌
