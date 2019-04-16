@@ -68,6 +68,7 @@ class QVGSM_VALUE:
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
+            locals()['excess_rtn_sum_{}'.format(i)] = list()
     
     def set_universe(uni,first_data):
         first_data = first_data
@@ -131,11 +132,11 @@ class QVGSM_VALUE:
                 for i in range(1,6):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
-                    rst_rtn_d['rtn_d_excess_sum'] = rst_rtn_d.groupby('GICODE')['rtn_d'].apply(lambda x: (x-1).cumsum()) # 수익률의 단순 합을 구하기 위해서 만듬
+                    rst_rtn_d['rtn_d_excess'] = rst_rtn_d['rtn_d']-1 # 수익률의 단순 합을 구하기 위해서 만듬
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  / len(locals()['q_{}'.format(i)])
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
-                   
+                    locals()['excess_rtn_sum_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').mean()['rtn_d_excess'])
                     locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
                     
                     locals()['end_wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)][locals()['wealth_num_{}'.format(i)]][-1]
@@ -187,10 +188,11 @@ class QVGSM_VALUE:
                 for i in range(1,6):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
+                    rst_rtn_d['rtn_d_excess'] = rst_rtn_d['rtn_d']-1
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  / len(locals()['q_{}'.format(i)])
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
-                   
+                    locals()['excess_rtn_sum_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').mean()['rtn_d_excess'])
                     locals()['wealth_{}'.format(i)].append(rst_rtn_d.groupby('TRD_DATE_y').sum()['rtn_d_cum']) # list로 쭈욱 받고
                     
                     locals()['end_wealth_{}'.format(i)] = locals()['wealth_{}'.format(i)][locals()['wealth_num_{}'.format(i)]][-1]
@@ -216,6 +218,8 @@ for i in range(1,6):
 
     locals()['wealth_{}'.format(i)] = pd.concat(locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
     locals()['wealth_{}'.format(i)]=locals()['wealth_{}'.format(i)][~locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
+    locals()['excess_rtn_sum_{}'.format(i)] = pd.concat(locals()['excess_rtn_sum_{}'.format(i)])
+    locals()['excess_rtn_sum_{}'.format(i)] = locals()['excess_rtn_sum_{}'.format(i)][locals()['excess_rtn_sum_{}'.format(i)].notnull()]
     locals()['daily_gross_rtn_{}'.format(i)]=pd.DataFrame(locals()['wealth_{}'.format(i)].pct_change()+1) # wealth의 누적에서 일별 gross 수익률을 구함.
     locals()['daily_gross_rtn_{}'.format(i)][np.isnan(locals()['daily_gross_rtn_{}'.format(i)])] = 0             # 첫번째 수익률이 nan이기 떄문에 바꿔준다.
     locals()['turnover_day_{}'.format(i)] = locals()['turnover_day_{}'.format(i)].shift(1) * 0.005 # turnover 구한거를 리밸런싱 다음날에 반영해준다.
