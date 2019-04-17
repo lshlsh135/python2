@@ -64,11 +64,13 @@ import copy
 class QVGSM_VALUE:
  
     def __init__(self,raw_data,rebalancing_date,kospi_day,daily_return,factor,universe):
-       self.day_date = kospi_day.reset_index()
-       self.factor = factor
-       self.uni = universe
-       self.col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
-       self.daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
+        self.raw_data = raw_data
+        self.rebalancing_date = rebalancing_date
+        self.day_date = kospi_day.reset_index()
+        self.factor = factor
+        self.uni = universe
+        self.col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
+        self.daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
 
     
     def set_universe(self,first_data):
@@ -96,15 +98,19 @@ class QVGSM_VALUE:
             locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
-            locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
+            locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (self.daily_date.shape[0], self.daily_date.shape[1])),index = self.daily_date['TRD_DATE'])
             locals()['excess_rtn_sum_{}'.format(i)] = list()
       
-       
-        
+        n=20
+        first_data = self.raw_data[self.raw_data['TRD_DATE']==self.rebalancing_date.iloc[n,0]]
+        b = a.set_universe(first_data)
+        c = a.set_factors(b)
+               
+        return c
         
 a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,'1/per','코스피200')
-b = a.set_universe(first_data)
-c = a.set_factors(b)
+d = a.QVGSM()
+
 
         for n in range(20,col_length-3): 
             if rebalancing_date.iloc[n,0][5:7] =='02':
@@ -249,6 +255,11 @@ for i in range(1,6):
 #    locals()['mdd_port_{}'.format(i)] = locals()['dd_port_{}'.format(i)].min()
 #    
 #    locals()['sharpe_{}'.format(i)] = np.sqrt(252)*(locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).mean() / (locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).std()
+
+
+
+
+
 net_wealth = pd.DataFrame()
 for i in range(1,6):
     net_wealth = pd.concat([net_wealth,locals()['wealth_{}'.format(i)]],axis=1)     
