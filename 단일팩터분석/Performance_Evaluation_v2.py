@@ -50,8 +50,7 @@ class Performance_Evaluation:
         save_data = pd.DataFrame()
         for i in range(1,6):
             save_data = pd.concat([save_data,locals()['save_data_{}'.format(i)]],axis=0)
-    
-        
+           
     
         return save_data
     def Monthly_Winning_ratio(self,save_data):

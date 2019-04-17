@@ -60,7 +60,7 @@ import numpy as np
 import pandas as pd
 #from drawdown import drawdown
 import copy
-
+from Performance_Evaluation_v2 import Performance_Evaluation
 class QVGSM_VALUE:
  
     def __init__(self,raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,factor,universe):
@@ -115,7 +115,7 @@ class QVGSM_VALUE:
 
 
 
-        for n in range(20,22): 
+        for n in range(20,self.col_length): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
@@ -253,7 +253,14 @@ class QVGSM_VALUE:
             locals()['net_daily_gross_rtn_{}'.format(i)][0] = 1 # 누적 wealth를 구하기 위해 첫날 수익률을 1이라고 가정.
             locals()['net_wealth_{}'.format(i)]=locals()['net_daily_gross_rtn_{}'.format(i)].cumprod()
         
-        return locals()['wealth_{}'.format(1)],locals()['net_wealth_{}'.format(1)] 
+        
+        
+        net_wealth = pd.DataFrame()
+        for i in range(1,6):
+            net_wealth = pd.concat([net_wealth,locals()['net_wealth_{}'.format(i)]],axis=1)
+        net_wealth.columns = range(1,6)
+        
+        return net_wealth 
 #    locals()['dd_port_{}'.format(i)] = drawdown(pd.DataFrame(locals()['net_wealth_{}'.format(i)].pct_change(1)))
 ##            return_final = np.product(return_data[return_data!=0].dropna(axis=1),axis=1)   # return_data[return_data!=0].dropna(axis=1) => 0인걸 nan으로 바꾸고 다시 nan을 버린다!
 #    locals()['mdd_port_{}'.format(i)] = locals()['dd_port_{}'.format(i)].min()
@@ -265,9 +272,18 @@ a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_m
 d = a.QVGSM()
 
 
-net_wealth = pd.DataFrame()
-for i in range(1,6):
-    net_wealth = pd.concat([net_wealth,locals()['wealth_{}'.format(i)]],axis=1)     
+b = Performance_Evaluation(d,kospi_day,kospi200_day)
+c = b.Monthly_PF_EV()
+
+
+
+
+
+
+
+
+
+
 
 net_wealth.columns = range(1,6)
 net_daily_gross_rtn = net_wealth.pct_change()+1
