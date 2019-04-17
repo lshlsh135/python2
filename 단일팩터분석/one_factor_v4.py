@@ -63,15 +63,17 @@ import copy
 
 class QVGSM_VALUE:
  
-    def __init__(self,raw_data,rebalancing_date,kospi_day,daily_return,factor,universe):
+    def __init__(self,raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,factor,universe):
         self.raw_data = raw_data
+        self.daily_return = daily_return
         self.rebalancing_date = rebalancing_date
         self.day_date = kospi_day.reset_index()
         self.factor = factor
         self.uni = universe
         self.col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
         self.daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
-
+        self.wics_mid = wics_mid
+        self.wics_big = wics_big
     
     def set_universe(self,first_data):
 #        self.first_data = first_data
@@ -93,6 +95,14 @@ class QVGSM_VALUE:
 
    
     def QVGSM(self):
+        
+        for i in range(1,6):
+            locals()['wics_mid_df_{}'.format(i)]=pd.DataFrame(data = np.zeros((self.wics_mid.shape[0],0)),index = self.wics_mid['WICS_MID'])
+
+        for i in range(1,6):
+            locals()['wics_big_df_{}'.format(i)]=pd.DataFrame(data = np.zeros((self.wics_big.shape[0],0)),index = self.wics_big['WICS_BIG'])
+      
+
         for i in range(1,6): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
             locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
             locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
@@ -100,40 +110,33 @@ class QVGSM_VALUE:
             locals()['wealth_num_{}'.format(i)] = 0 # 리밸런싱 할때마다 wealth의 리스트 row가 증가하기 때문에 같이 늘려주는 변수
             locals()['turnover_day_{}'.format(i)] = pd.DataFrame(np.zeros(shape = (self.daily_date.shape[0], self.daily_date.shape[1])),index = self.daily_date['TRD_DATE'])
             locals()['excess_rtn_sum_{}'.format(i)] = list()
-      
-        n=20
-        first_data = self.raw_data[self.raw_data['TRD_DATE']==self.rebalancing_date.iloc[n,0]]
-        b = a.set_universe(first_data)
-        c = a.set_factors(b)
-               
-        return c
+    
         
-a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,'1/per','코스피200')
-d = a.QVGSM()
 
 
-        for n in range(20,col_length-3): 
-            if rebalancing_date.iloc[n,0][5:7] =='02':
+
+        for n in range(20,22): 
+            if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
-                first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
-                first_data = set_universe(uni,first_data)
+                first_data = self.raw_data[self.raw_data['TRD_DATE']==self.rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
+                first_data = self.set_universe(first_data)
                                 
                 first_data['MARKET_CAP'] = first_data['MARKET_CAP_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP']>100000000000]
                 
-                first_data = set_factors(factor,first_data)
+                first_data = self.set_factors(first_data)
 
                 
 
                 for i in range(1,5):
-                    locals()['q_{}'.format(i)]=first_data[(first_data[factor]>first_data[factor].quantile(1-0.2*(i)))
-                                                        &(first_data[factor]<=first_data[factor].quantile(1 - 0.2*(i-1)))]
+                    locals()['q_{}'.format(i)]=first_data[(first_data[self.factor]>first_data[self.factor].quantile(1-0.2*(i)))
+                                                        &(first_data[self.factor]<=first_data[self.factor].quantile(1 - 0.2*(i-1)))]
                 for i in range(5,6):
-                    locals()['q_{}'.format(i)]=first_data[(first_data[factor]>=first_data[factor].quantile(1-0.2*(i)))
-                                                        &(first_data[factor]<=first_data[factor].quantile(1 - 0.2*(i-1)))]
+                    locals()['q_{}'.format(i)]=first_data[(first_data[self.factor]>=first_data[self.factor].quantile(1-0.2*(i)))
+                                                        &(first_data[self.factor]<=first_data[self.factor].quantile(1 - 0.2*(i-1)))]
                 
                 
                 for i in range(1,6):
@@ -143,10 +146,10 @@ d = a.QVGSM()
                     locals()['wics_big_df_{}'.format(i)] = pd.merge(locals()['wics_big_df_{}'.format(i)],pd.DataFrame(data = locals()['q_{}'.format(i)].groupby('WICS_BIG').count().iloc[:,0]).rename(columns={'TRD_DATE':n}),left_index=True,right_index=True,how='left')            
 
                 try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                    reb_next_day = self.day_date.loc[self.day_date.loc[self.day_date['TRD_DATE']==self.rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
+                    rtn_d_need=self.daily_return[(self.daily_return['TRD_DATE']<=reb_next_day)&(self.daily_return['TRD_DATE']>self.rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
                 except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+2,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                    rtn_d_need=self.daily_return[(self.daily_return['TRD_DATE']<=self.rebalancing_date.iloc[n+2,0])&(self.daily_return['TRD_DATE']>self.rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
                 
                 
                 
@@ -166,32 +169,32 @@ d = a.QVGSM()
                     
                     
                     if locals()['turno_{}'.format(i)] == 0:
-                        locals()['turnover_day_{}'.format(i)].loc[rebalancing_date.iloc[n+1,0]] = 1
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = 1
                         locals()['turno_{}'.format(i)]+= 1
                     else:
                         turnover_data_sum=pd.merge(rst_rtn_d[rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],locals()['rst_rtn_d_past_{}'.format(i)][locals()['rst_rtn_d_past_{}'.format(i)]['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],how='outer',on='GICODE')
                         turnover_data_sum = turnover_data_sum.replace(np.nan,0)  
-                        locals()['turnover_day_{}'.format(i)].loc[rebalancing_date.iloc[n+1,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n+1,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
                         -turnover_data_sum['rtn_d_cum_y']/np.sum(turnover_data_sum['rtn_d_cum_y'])))
                     
                     
                     
                     locals()['rst_rtn_d_past_{}'.format(i)] = rst_rtn_d
-                
+                print(self.rebalancing_date.iloc[n+1,0])
  
 
                 
             else:
-                first_data = raw_data[raw_data['TRD_DATE']==rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
-                first_data = set_universe(uni,first_data)
-                first_data = set_factors(factor,first_data)
+                first_data = self.raw_data[self.raw_data['TRD_DATE']==self.rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
+                first_data = self.set_universe(first_data)
+                first_data = self.set_factors(first_data)
 
                 for i in range(1,5):
-                    locals()['q_{}'.format(i)]=first_data[(first_data[factor]>first_data[factor].quantile(1-0.2*(i)))
-                                                        &(first_data[factor]<=first_data[factor].quantile(1 - 0.2*(i-1)))]
+                    locals()['q_{}'.format(i)]=first_data[(first_data[self.factor]>first_data[self.factor].quantile(1-0.2*(i)))
+                                                        &(first_data[self.factor]<=first_data[self.factor].quantile(1 - 0.2*(i-1)))]
                 for i in range(5,6):
-                    locals()['q_{}'.format(i)]=first_data[(first_data[factor]>=first_data[factor].quantile(1-0.2*(i)))
-                                                        &(first_data[factor]<=first_data[factor].quantile(1 - 0.2*(i-1)))]
+                    locals()['q_{}'.format(i)]=first_data[(first_data[self.factor]>=first_data[self.factor].quantile(1-0.2*(i)))
+                                                        &(first_data[self.factor]<=first_data[self.factor].quantile(1 - 0.2*(i-1)))]
                 
                 for i in range(1,6):
                     locals()['wics_mid_df_{}'.format(i)] = pd.merge(locals()['wics_mid_df_{}'.format(i)],pd.DataFrame(data = locals()['q_{}'.format(i)].groupby('WICS_MID').count().iloc[:,0]).rename(columns={'TRD_DATE':n}),left_index=True,right_index=True,how='left')            
@@ -200,10 +203,10 @@ d = a.QVGSM()
                     locals()['wics_big_df_{}'.format(i)] = pd.merge(locals()['wics_big_df_{}'.format(i)],pd.DataFrame(data = locals()['q_{}'.format(i)].groupby('WICS_BIG').count().iloc[:,0]).rename(columns={'TRD_DATE':n}),left_index=True,right_index=True,how='left')            
 
                 try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                    reb_next_day = self.day_date.loc[self.day_date.loc[self.day_date['TRD_DATE']==self.rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
+                    rtn_d_need=self.daily_return[(self.daily_return['TRD_DATE']<=reb_next_day)&(self.daily_return['TRD_DATE']>self.rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
                 except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+1,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                    rtn_d_need=self.daily_return[(self.daily_return['TRD_DATE']<=self.rebalancing_date.iloc[n+1,0])&(self.daily_return['TRD_DATE']>self.rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
                 
 
                 for i in range(1,6):
@@ -222,34 +225,35 @@ d = a.QVGSM()
                     
                     
                     if locals()['turno_{}'.format(i)] == 0:
-                        locals()['turnover_day_{}'.format(i)].loc[rebalancing_date.iloc[n,0]] = 1
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = 1
                         locals()['turno_{}'.format(i)]+= 1
                     else:
                         turnover_data_sum=pd.merge(rst_rtn_d[rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],locals()['rst_rtn_d_past_{}'.format(i)][locals()['rst_rtn_d_past_{}'.format(i)]['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y']],how='outer',on='GICODE')
                         turnover_data_sum = turnover_data_sum.replace(np.nan,0)  
-                        locals()['turnover_day_{}'.format(i)].loc[rebalancing_date.iloc[n,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
+                        locals()['turnover_day_{}'.format(i)].loc[self.rebalancing_date.iloc[n,0]] = np.sum(abs(turnover_data_sum['rtn_d_cum_x']/np.sum(turnover_data_sum['rtn_d_cum_x'])
                         -turnover_data_sum['rtn_d_cum_y']/np.sum(turnover_data_sum['rtn_d_cum_y'])))
                     
                     
                     
                     locals()['rst_rtn_d_past_{}'.format(i)] = rst_rtn_d                
-                
+                print(self.rebalancing_date.iloc[n,0])
             
-for i in range(1,6):
-
-    locals()['wealth_{}'.format(i)] = pd.concat(locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
-    locals()['wealth_{}'.format(i)]=locals()['wealth_{}'.format(i)][~locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
-#    locals()['excess_rtn_sum_{}'.format(i)] = pd.concat(locals()['excess_rtn_sum_{}'.format(i)])
-#    locals()['excess_rtn_sum_{}'.format(i)] = locals()['excess_rtn_sum_{}'.format(i)][locals()['excess_rtn_sum_{}'.format(i)].notnull()]
-    locals()['daily_gross_rtn_{}'.format(i)]=pd.DataFrame(locals()['wealth_{}'.format(i)].pct_change()+1) # wealth의 누적에서 일별 gross 수익률을 구함.
-    locals()['daily_gross_rtn_{}'.format(i)][np.isnan(locals()['daily_gross_rtn_{}'.format(i)])] = 0             # 첫번째 수익률이 nan이기 떄문에 바꿔준다.
-    locals()['turnover_day_{}'.format(i)] = locals()['turnover_day_{}'.format(i)].shift(1) * 0.005 # turnover 구한거를 리밸런싱 다음날에 반영해준다.
-    locals()['sub_{}'.format(i)] = pd.merge(locals()['daily_gross_rtn_{}'.format(i)],
-                                            locals()['turnover_day_{}'.format(i)],left_index=True,right_index=True)
-    locals()['net_daily_gross_rtn_{}'.format(i)]=locals()['sub_{}'.format(i)].iloc[:,0]-locals()['sub_{}'.format(i)].iloc[:,1]
-    locals()['net_daily_gross_rtn_{}'.format(i)][0] = 1 # 누적 wealth를 구하기 위해 첫날 수익률을 1이라고 가정.
-    locals()['net_wealth_{}'.format(i)]=locals()['net_daily_gross_rtn_{}'.format(i)].cumprod()
-    
+        for i in range(1,6):
+        
+            locals()['wealth_{}'.format(i)] = pd.concat(locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
+            locals()['wealth_{}'.format(i)]=locals()['wealth_{}'.format(i)][~locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
+        #    locals()['excess_rtn_sum_{}'.format(i)] = pd.concat(locals()['excess_rtn_sum_{}'.format(i)])
+        #    locals()['excess_rtn_sum_{}'.format(i)] = locals()['excess_rtn_sum_{}'.format(i)][locals()['excess_rtn_sum_{}'.format(i)].notnull()]
+            locals()['daily_gross_rtn_{}'.format(i)]=pd.DataFrame(locals()['wealth_{}'.format(i)].pct_change()+1) # wealth의 누적에서 일별 gross 수익률을 구함.
+            locals()['daily_gross_rtn_{}'.format(i)][np.isnan(locals()['daily_gross_rtn_{}'.format(i)])] = 0             # 첫번째 수익률이 nan이기 떄문에 바꿔준다.
+            locals()['turnover_day_{}'.format(i)] = locals()['turnover_day_{}'.format(i)].shift(1) * 0.005 # turnover 구한거를 리밸런싱 다음날에 반영해준다.
+            locals()['sub_{}'.format(i)] = pd.merge(locals()['daily_gross_rtn_{}'.format(i)],
+                                                    locals()['turnover_day_{}'.format(i)],left_index=True,right_index=True)
+            locals()['net_daily_gross_rtn_{}'.format(i)]=locals()['sub_{}'.format(i)].iloc[:,0]-locals()['sub_{}'.format(i)].iloc[:,1]
+            locals()['net_daily_gross_rtn_{}'.format(i)][0] = 1 # 누적 wealth를 구하기 위해 첫날 수익률을 1이라고 가정.
+            locals()['net_wealth_{}'.format(i)]=locals()['net_daily_gross_rtn_{}'.format(i)].cumprod()
+        
+        return locals()['wealth_{}'.format(1)],locals()['net_wealth_{}'.format(1)] 
 #    locals()['dd_port_{}'.format(i)] = drawdown(pd.DataFrame(locals()['net_wealth_{}'.format(i)].pct_change(1)))
 ##            return_final = np.product(return_data[return_data!=0].dropna(axis=1),axis=1)   # return_data[return_data!=0].dropna(axis=1) => 0인걸 nan으로 바꾸고 다시 nan을 버린다!
 #    locals()['mdd_port_{}'.format(i)] = locals()['dd_port_{}'.format(i)].min()
@@ -257,7 +261,8 @@ for i in range(1,6):
 #    locals()['sharpe_{}'.format(i)] = np.sqrt(252)*(locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).mean() / (locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).std()
 
 
-
+a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,'1/per','코스피200')
+d = a.QVGSM()
 
 
 net_wealth = pd.DataFrame()

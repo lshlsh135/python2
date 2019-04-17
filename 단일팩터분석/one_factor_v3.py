@@ -91,7 +91,7 @@ class QVGSM_VALUE:
    
     def QVGSM(self):
         
-        for n in range(20,col_length-3): 
+        for n in range(20,col_length): 
             if rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
@@ -236,7 +236,7 @@ for i in range(1,6):
 #    locals()['sharpe_{}'.format(i)] = np.sqrt(252)*(locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).mean() / (locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).std()
 net_wealth = pd.DataFrame()
 for i in range(1,6):
-    net_wealth = pd.concat([net_wealth,locals()['wealth_{}'.format(i)]],axis=1)     
+    net_wealth = pd.concat([net_wealth,locals()['net_wealth_{}'.format(i)]],axis=1)     
 
 net_wealth.columns = range(1,6)
 net_daily_gross_rtn = net_wealth.pct_change()+1
