@@ -24,7 +24,7 @@ def Make_Tables(self,month_list):
     net_range_gross_rtn = net_range_gross_rtn.sort_index(ascending=False)
 #        month_list = [12,24,36,60]
     ticker = ['Monthly_AV','Monthly_STD','IR','MDD','Win_Rate']
-    a=list()
+
     for p in range(1,6):
         locals()['save_data_{}'.format(p)] = pd.DataFrame(data = np.zeros((len(ticker),len(month_list))), index = ticker, columns = month_list)
 
