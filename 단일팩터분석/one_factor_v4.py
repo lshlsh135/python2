@@ -274,38 +274,6 @@ d = a.QVGSM()
 
 b = Performance_Evaluation(d,kospi_day,kospi200_day)
 c = b.Monthly_PF_EV()
-
-
-
-
-
-
-
-
-
-
-
-net_wealth.columns = range(1,6)
-net_daily_gross_rtn = net_wealth.pct_change()+1
-net_daily_gross_rtn.iloc[0,:]=1
-
-#net_wealth.to_pickle(str(factor))
-
-datetime=pd.DataFrame(pd.to_datetime(net_daily_gross_rtn.index)) # 월말 날짜를 뽑기위해 datetime으로 바꿔줌
-net_daily_gross_rtn = pd.DataFrame(net_daily_gross_rtn, index = datetime['TRD_DATE_y']) # n_w의 index를 python의 date type로 바꿔줌
-
-year_data=list(net_daily_gross_rtn.index.year.unique())
-month_data=list(net_daily_gross_rtn.index.month.unique())
-month_data.sort()
-
-for p in range(1,net_daily_gross_rtn.shape[1]+1):
-    locals()['save_data_{}'.format(p)] = pd.DataFrame(data = np.zeros((len(year_data),len(month_data))), index = year_data, columns = month_data)
-    save_data_temp = pd.DataFrame(net_daily_gross_rtn[p])
-    for pp in year_data:
-        for ppp in month_data:
-            if len(save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)]) != 0:
-                locals()['save_data_{}'.format(p)].loc[pp,ppp]=save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values
-
-
+e = b.Make_Tables(month_list)
 
 
