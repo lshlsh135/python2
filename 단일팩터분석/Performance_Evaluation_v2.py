@@ -20,7 +20,7 @@ class Performance_Evaluation:
         self.kospi_day = kospi_day
         self.kospi200_day = kospi200_day
         
-    def Monthly_PF_EV(self):
+    def Monthly_PF_EV(self): # BM대비 초과수익률이군..... 문제는 BM이 없는 경우네 ㅋ
         wealth_ = pd.merge(self.wealth,self.kospi200_day,left_index=True, right_index=True, how='inner')
     
         net_daily_gross_rtn = wealth_.pct_change()+1
@@ -46,7 +46,10 @@ class Performance_Evaluation:
                         print(pp,ppp)
                         locals()['save_data_{}'.format(p)].loc[pp,ppp] = save_data_temp[(save_data_temp.index.year == pp)&(save_data_temp.index.month == ppp)].prod().values[0]
         
-        
+            locals()['save_data_{}'.format(p)] = locals()['save_data_{}'.format(p)].replace(0,np.nan)
+            locals()['save_data_{}'.format(p)].loc[:,'excess_month_avg'] = locals()['save_data_{}'.format(p)].mean(axis=1)
+            locals()['save_data_{}'.format(p)].loc['excess_year_avg',:] = locals()['save_data_{}'.format(p)].mean(axis=0)
+
         save_data = pd.DataFrame()
         for i in range(1,6):
             save_data = pd.concat([save_data,locals()['save_data_{}'.format(i)]],axis=0)

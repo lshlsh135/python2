@@ -64,6 +64,8 @@ import numpy as np
 import cx_Oracle
 import itertools
 from calculate_bm_updown import calculate_bm_updown
+from one_factor_v4 import QVGSM_VALUE
+from Performance_Evaluation_v2 import Performance_Evaluation
 
 #이거 두개 반드시 선언!
 cx0=cx_Oracle.makedsn("localhost",1521,"xe")
@@ -116,7 +118,7 @@ rebalancing_date = pd.read_sql("""select * from month_date_20181130""",con=conne
 
 #kospi_daily_return = pd.read_sql("""select * from kospi_daily_stock """,con=connection)
 #kosdaq_daily_return = pd.read_sql("""select * from kosdaq_daily_stock """,con=connection)
-daily_return = pd.read_sql("""select trd_date, gicode, co_nm, adj_prc_d, lag(adj_prc_d, 252) over(partition by gicode order by trd_date) adj_prc_d_252 from kospi_daily_stock_20180928 """,con=connection).drop_duplicates()
+daily_return = pd.read_sql("""select trd_date, gicode, co_nm, adj_prc_d, lag(adj_prc_d, 252) over(partition by gicode order by trd_date) adj_prc_d_252 from kospi_daily_stock_20181130 """,con=connection).drop_duplicates()
 
 daily_return = daily_return[daily_return['ADJ_PRC_D'].notnull()] # 메모리 사용량을 줄이기 위해서 실행
 #daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
@@ -176,55 +178,16 @@ first_column = len(raw_data.columns)  # 1/pbr 의 loc
 #raw_data['INTWO'] = np.max(raw_data['NI'],raw_data['NI_1Y']) 마지막에 해야겠는걸
 raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경
 
-final_column = len(raw_data.columns)-1 # roa 의 loc
-a=raw_data[raw_data['CO_NM']=='삼성전자']
+kospi200_rtn_d  =(kospi200_day.pct_change()+1).fillna(1).cumprod()
 
-
-ir_data = pd.DataFrame(np.zeros((final_column-first_column+1,30)))
-factor_num = 1
-row_num = 0
-
-factors=raw_data.head().T.reset_index().loc[first_column:,'index'].reset_index(drop=True)
-#raw_data = raw_data.loc[:,['TRD_DATE','CO_NM_y','size_FIF_wisefn','ISKOSDAQ','WICS_MID','GICODE','ADJ_PRC','CAP_SIZE','MARKET_CAP','CO_NM']+list(factors)]
-
-
-profit_col_loc = ['GPOA','ROE','ROA','CFOA','GMAR','ACC']
-value_col_loc = ['1/per','1/pbr','div_yield']
-
-
-#a=QVGSM(50,raw_data,rebalancing_date,month_date,wics_mid,daily_return,gross_col_loc,profit_col_loc,value_col_loc,cpi_data)
-#b =a.QVGSM()
-
-
-
-gross_col_loc = ['D5GPOA','D5ROE','D5ROA','D5CFOA','D5GMAR','D5ACC']
-col1 = []
-
-for i in range(1, len(gross_col_loc)+1):
-    els = [list(x) for x in itertools.combinations(gross_col_loc, i)]
-    col1.extend(els)
-
-profit_col_loc = ['GPOA','ROE','ROA','CFOA','GMAR','ACC']
-col2 = []
-
-for i in range(1, len(profit_col_loc)+1):
-    els = [list(x) for x in itertools.combinations(profit_col_loc, i)]
-    col2.extend(els)
-
-value_col_loc = ['1/per','1/pbr','div_yield']
-col3 = []
-
-for i in range(1, len(value_col_loc)+1):
-    els = [list(x) for x in itertools.combinations(value_col_loc, i)]
-    col3.extend(els)
-
-m=0
-o=1
-j=6
-i=18
-a=QVGSM_VALUE(50,raw_data,rebalancing_date,kospi_day,daily_return,col1[i],col2[i],col3[j],cpi_data,o,m)
-locals()['aaa_{}{}{}{}{}'.format(i,i,j,o,m)] =a.QVGSM()
-c=cal_turnover(locals()['aaa_{}{}{}{}{}'.format(i,i,j,o,m)][2])
-b=result_calculator_20180330(net_wealth,kospi200_day)
-b.rolling_12month_return_5factor(i,i,j,o,m)
-
+for i in ['코스피','코스닥','코스피200']:
+    locals()['result_{}'.format(i)] = dict()
+    a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,'1/per',i)
+    d = a.QVGSM()
+    b = Performance_Evaluation(d,kospi_day,kospi200_day)
+    
+    locals()['result_{}'.format(i)]['year_month_table'] = b.Monthly_PF_EV()
+    month_list = [12,24,36,60,211]
+    locals()['result_{}'.format(i)]['statistics_table'] = b.Make_Tables(month_list)
+    locals()['result_{}'.format(i)]['net_wealth_kospi200'] = pd.merge(d,kospi200_rtn_d,left_index=True, right_index=True, how='inner')
+    

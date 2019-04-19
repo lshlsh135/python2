@@ -81,6 +81,8 @@ class QVGSM_VALUE:
             first_data = first_data[first_data['ISKOSPI200']==1]
         elif self.uni == "코스피":
             first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+        elif self.uni == "코스닥":
+            first_data = first_data[(first_data['ISKOSDAQ']=='KOSDAQ')]
         return first_data
         
     def set_factors(self,first_data): # 2매달 바뀌는 친구들은 제외
@@ -268,12 +270,8 @@ class QVGSM_VALUE:
 #    locals()['sharpe_{}'.format(i)] = np.sqrt(252)*(locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).mean() / (locals()['net_daily_gross_rtn_{}'.format(i)][1:]-1).std()
 
 
-a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,'1/per','코스피200')
-d = a.QVGSM()
 
 
-b = Performance_Evaluation(d,kospi_day,kospi200_day)
-c = b.Monthly_PF_EV()
-e = b.Make_Tables(month_list)
+
 
 
