@@ -57,8 +57,8 @@ raw_data['opro_cap']=raw_data['OPE_PROFIT']/raw_data['MARKET_CAP'] # 이놈 시�
 
 @author: SH-NoteBook
 """
-
-
+import xlsxwriter
+import openpyxl
 import pandas as pd
 import numpy as np
 import cx_Oracle
@@ -179,15 +179,30 @@ first_column = len(raw_data.columns)  # 1/pbr 의 loc
 raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경
 
 kospi200_rtn_d  =(kospi200_day.pct_change()+1).fillna(1).cumprod()
-
+j = '1/per'
 for i in ['코스피','코스닥','코스피200']:
     locals()['result_{}'.format(i)] = dict()
-    a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,'1/per',i)
+    a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,j,i)
     d = a.QVGSM()
     b = Performance_Evaluation(d,kospi_day,kospi200_day)
     
-    locals()['result_{}'.format(i)]['year_month_table'] = b.Monthly_PF_EV()
+    locals()['result_{}'.format(i)]['net_wealth'] = d
+    Monthly_PF_EV_results = b.Monthly_PF_EV()
+    locals()['result_{}'.format(i)]['year_month_table'] = Monthly_PF_EV_results[0]
+    locals()['result_{}'.format(i)]['net_wealth_return&excess_return'] = Monthly_PF_EV_results[1]
+    
     month_list = [12,24,36,60,211]
     locals()['result_{}'.format(i)]['statistics_table'] = b.Make_Tables(month_list)
-    locals()['result_{}'.format(i)]['net_wealth_kospi200'] = pd.merge(d,kospi200_rtn_d,left_index=True, right_index=True, how='inner')
-    
+#    locals()['result_{}'.format(i)]['net_wealth_kospi200'] = pd.merge(d,kospi200_rtn_d,left_index=True, right_index=True, how='inner')
+if j == '1/per':
+    j_ = '1_per'
+writer = pd.ExcelWriter(i + '.xlsx',engine='xlsxwriter')
+locals()['result_{}'.format(i)]['net_wealth&excess_return'].to_excel(writer,j_)
+workbook = writer.book
+worksheet = writer.sheets[j_]
+locals()['result_{}'.format(i)]['net_wealth'].to_excel(writer,j_,startrow = 1,startcol=14,index = True, header = True)
+#time_df = pd.DataFrame(np.zeros((1,1)))
+#time_df.iloc[0,0] = timestr
+locals()['result_{}'.format(i)]['statistics_table'].to_excel(writer,j_,startrow = 1,startcol=22,index = True, header = True)
+locals()['result_{}'.format(i)]['year_month_table'].to_excel(writer,j_,startrow =1, startcol =29,index = True, header = True)
+writer.save()
