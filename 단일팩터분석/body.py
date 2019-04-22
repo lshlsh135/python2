@@ -64,7 +64,8 @@ import numpy as np
 import cx_Oracle
 import itertools
 from calculate_bm_updown import calculate_bm_updown
-from one_factor_v4 import QVGSM_VALUE
+#from one_factor_v4 import QVGSM_VALUE
+from one_factor_v5 import QVGSM_VALUE
 from Performance_Evaluation_v2 import Performance_Evaluation
 
 #이거 두개 반드시 선언!
@@ -125,6 +126,7 @@ daily_return = daily_return[daily_return['ADJ_PRC_D'].notnull()] # 메모리 사
 #wealth = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'], columns = ['RTN_D_CUM'])
 #turnover_day = pd.DataFrame(np.zeros(shape = (daily_date.shape[0], daily_date.shape[1])),index = daily_date['TRD_DATE'])
 raw_data = pd.concat([kospi,kosdaq],axis=0,ignore_index=True).drop_duplicates()   #왜인지 모르겠는데 db에 중복된 정보가 들어가있네 ..? 
+raw_data = raw_data[raw_data['CO_NM']!='에스와이코퍼레이션']
 col_length = len(rebalancing_date)-1 #rebalancing_date의 길이는 66이다. range로 이렇게 하면 0부터 65까지 66개의 i 가 만들어진다. -1을 해준건 실제 수익률은 -1개가 생성되기 때문.
 
 wics_mid = pd.read_sql("""select distinct wics_mid from kospi_20181130""",con=connection)[1:]
@@ -178,31 +180,60 @@ first_column = len(raw_data.columns)  # 1/pbr 의 loc
 #raw_data['INTWO'] = np.max(raw_data['NI'],raw_data['NI_1Y']) 마지막에 해야겠는걸
 raw_data = raw_data.rename(columns={'CO_NM_x':'CO_NM'}) # column 이름 변경
 
+# =============================================================================
+# 
+# =============================================================================
+
 kospi200_rtn_d  =(kospi200_day.pct_change()+1).fillna(1).cumprod()
-j = '1/per'
-for i in ['코스피','코스닥','코스피200']:
-    locals()['result_{}'.format(i)] = dict()
-    a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,j,i)
-    d = a.QVGSM()
-    b = Performance_Evaluation(d,kospi_day,kospi200_day)
+#for i in ['코스피','코스닥','코스피200']:  
+for i in ['코스피중소형','코스피+코스닥']:    
+    writer = pd.ExcelWriter('123131213132131212.xlsx',engine='xlsxwriter')
+    for j in ['1/per','1/pbr']:
+        for k in ['',10**11]:
+            locals()['result_{}'.format(i)] = dict()
+            a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,j,i)
+            d = a.QVGSM(k,"")
+            b = Performance_Evaluation(d,kospi_day,kospi200_day)
+            
+            locals()['result_{}'.format(i)]['net_wealth'] = d
+            Monthly_PF_EV_results = b.Monthly_PF_EV()
+            locals()['result_{}'.format(i)]['year_month_table'] = Monthly_PF_EV_results[0]
+            locals()['result_{}'.format(i)]['net_wealth_return&excess_return'] = Monthly_PF_EV_results[1]
+            
+            month_list = [12,24,36,60,211]
+            locals()['result_{}'.format(i)]['statistics_table'] = b.Make_Tables(month_list)
+        #    locals()['result_{}'.format(i)]['net_wealth_kospi200'] = pd.merge(d,kospi200_rtn_d,left_index=True, right_index=True, how='inner')
     
-    locals()['result_{}'.format(i)]['net_wealth'] = d
-    Monthly_PF_EV_results = b.Monthly_PF_EV()
-    locals()['result_{}'.format(i)]['year_month_table'] = Monthly_PF_EV_results[0]
-    locals()['result_{}'.format(i)]['net_wealth_return&excess_return'] = Monthly_PF_EV_results[1]
+            if j == '1/per':
+                j_ = '1_per'
+            elif j== '1/pbr':
+                j_ = '1_pbr'
+                
+            if k != '':
+                j_ = j_ + str(k)
+            
+            (locals()['result_{}'.format(i)]['net_wealth_return&excess_return']-1).to_excel(writer,j_)
+            #xlsx 함수에서 cell foramt 담당
+            workbook = writer.book
+            worksheet = writer.sheets[j_]
+            a = workbook.add_format({'num_format':'0.00%','align':'center'})
+            b = workbook.add_format({'num_format':'0.000','align':'center'})
+           
+
+            
+            locals()['result_{}'.format(i)]['net_wealth'].to_excel(writer,j_,startrow = 1,startcol=14,index = True, header = True)
+            #time_df = pd.DataFrame(np.zeros((1,1)))
+            #time_df.iloc[0,0] = timestr
+            locals()['result_{}'.format(i)]['statistics_table'].to_excel(writer,j_,startrow = 1,startcol=22,index = True, header = True)
+            (locals()['result_{}'.format(i)]['year_month_table']-1).to_excel(writer,j_,startrow =1, startcol =29,index = True, header = True)
+            worksheet.set_column('B:N',15,a)
+            worksheet.set_column('AD:AP',15,a)
+            worksheet.set_column('N:AC',15,b)
     
-    month_list = [12,24,36,60,211]
-    locals()['result_{}'.format(i)]['statistics_table'] = b.Make_Tables(month_list)
-#    locals()['result_{}'.format(i)]['net_wealth_kospi200'] = pd.merge(d,kospi200_rtn_d,left_index=True, right_index=True, how='inner')
-if j == '1/per':
-    j_ = '1_per'
-writer = pd.ExcelWriter(i + '.xlsx',engine='xlsxwriter')
-locals()['result_{}'.format(i)]['net_wealth&excess_return'].to_excel(writer,j_)
-workbook = writer.book
-worksheet = writer.sheets[j_]
-locals()['result_{}'.format(i)]['net_wealth'].to_excel(writer,j_,startrow = 1,startcol=14,index = True, header = True)
-#time_df = pd.DataFrame(np.zeros((1,1)))
-#time_df.iloc[0,0] = timestr
-locals()['result_{}'.format(i)]['statistics_table'].to_excel(writer,j_,startrow = 1,startcol=22,index = True, header = True)
-locals()['result_{}'.format(i)]['year_month_table'].to_excel(writer,j_,startrow =1, startcol =29,index = True, header = True)
-writer.save()
+    writer.save()
+
+# =============================================================================
+# 
+# =============================================================================
+a = QVGSM_VALUE(raw_data,rebalancing_date,kospi_day,daily_return,wics_big,wics_mid,j,i)
+d = a.QVGSM(10**11,10**12)

@@ -75,19 +75,29 @@ class QVGSM_VALUE:
         self.wics_mid = wics_mid
         self.wics_big = wics_big
     
-    def set_universe(first_data,cap_bottom,cap_ceil):
+    def set_universe(self,first_data,cap_bottom,cap_ceil):
 #        self.first_data = first_data
         if self.uni == "코스피200" :
             first_data = first_data[first_data['ISKOSPI200']==1]
         elif self.uni == "코스피":
             first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+
         elif self.uni == "코스닥":
             first_data = first_data[(first_data['ISKOSDAQ']=='KOSDAQ')]
+            
+        elif self.uni == "코스피+코스닥":
+            first_data = first_data[(first_data['CAP_SIZE']==1)|(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)|(first_data['ISKOSDAQ']=='KOSDAQ')]
+            
+        elif self.uni == "코스피중소형":
+            first_data = first_data[(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+         
+            
         if cap_bottom != "":
             first_data = first_data[first_data['MARKET_CAP']>=cap_bottom]
+
         if cap_ceil != "":
             first_data = first_data[first_data['MARKET_CAP']<=cap_ceil]
-        
+
         return first_data
         
     def set_factors(self,first_data): # 2매달 바뀌는 친구들은 제외
@@ -122,7 +132,8 @@ class QVGSM_VALUE:
 
 
 
-        for n in range(20,self.col_length): 
+#        for n in range(20,self.col_length): 
+        for n in range(20,21): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
@@ -267,7 +278,7 @@ class QVGSM_VALUE:
             net_wealth = pd.concat([net_wealth,locals()['net_wealth_{}'.format(i)]],axis=1)
         net_wealth.columns = range(1,6)
         
-        return net_wealth 
+        return net_wealth
 #    locals()['dd_port_{}'.format(i)] = drawdown(pd.DataFrame(locals()['net_wealth_{}'.format(i)].pct_change(1)))
 ##            return_final = np.product(return_data[return_data!=0].dropna(axis=1),axis=1)   # return_data[return_data!=0].dropna(axis=1) => 0인걸 nan으로 바꾸고 다시 nan을 버린다!
 #    locals()['mdd_port_{}'.format(i)] = locals()['dd_port_{}'.format(i)].min()
