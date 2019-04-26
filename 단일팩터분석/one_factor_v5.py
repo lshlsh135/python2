@@ -107,6 +107,12 @@ class QVGSM_VALUE:
             first_data[self.factor] = first_data['EQUITY']/first_data['MARKET_CAP']
         elif self.factor == 'div_yield':
             first_data[self.factor]=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
+        elif self.factor == 'ROE':
+            first_data[self.factor]=first_data['NI']/first_data['EQUITY']
+        elif self.factor == 'ROA':
+            first_data[self.factor]=first_data['NI']/first_data['ASSET']
+
+              
         first_data = first_data[first_data[self.factor].notnull()]
         return first_data
 
@@ -132,8 +138,8 @@ class QVGSM_VALUE:
 
 
 
-#        for n in range(20,self.col_length): 
-        for n in range(20,21): 
+        for n in range(20,self.col_length): 
+#        for n in range(20,21): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
     
