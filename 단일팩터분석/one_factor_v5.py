@@ -113,7 +113,12 @@ class QVGSM_VALUE:
             first_data[self.factor]=first_data['MARKET_CAP_COM']
         elif self.factor == 'CFOA':
             first_data[self.factor]=first_data['CFO_TTM'] / first_data['ASSET']
+        elif self.factor == 'CFOA':
+            first_data[self.factor]=first_data['CFO_TTM'] / first_data['ASSET']
+        elif self.factor == 'GPOA':
+            first_data[self.factor]=first_data['GROSS_PROFIT_TTM'] / first_data['ASSET']
 
+#raw_data['GPOA'] = raw_data['GROSS_PROFIT_TTM']/raw_data['ASSET']
             
         first_data = first_data[first_data[self.factor].notnull()]
         return first_data
