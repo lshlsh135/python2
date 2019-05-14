@@ -74,6 +74,8 @@ class QVGSM_VALUE:
         self.wics_big = wics_big
         if self.factor == 'CFOA':
             self.start_n = 45
+        elif self.factor == 'GPOA':
+            self.start_n = 21
         else:
             self.start_n = 20
     
