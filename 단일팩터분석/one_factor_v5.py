@@ -72,6 +72,10 @@ class QVGSM_VALUE:
         self.daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
         self.wics_mid = wics_mid
         self.wics_big = wics_big
+        if self.factor == 'CFOA':
+            self.start_n = 45
+        else:
+            self.start_n = 20
     
     def set_universe(self,first_data,cap_bottom,cap_ceil):
 #        self.first_data = first_data
@@ -113,8 +117,6 @@ class QVGSM_VALUE:
             first_data[self.factor]=first_data['MARKET_CAP_COM']
         elif self.factor == 'CFOA':
             first_data[self.factor]=first_data['CFO_TTM'] / first_data['ASSET']
-        elif self.factor == 'CFOA':
-            first_data[self.factor]=first_data['CFO_TTM'] / first_data['ASSET']
         elif self.factor == 'GPOA':
             first_data[self.factor]=first_data['GROSS_PROFIT_TTM'] / first_data['ASSET']
 
@@ -145,7 +147,7 @@ class QVGSM_VALUE:
 
 
 
-        for n in range(20,self.col_length): 
+        for n in range(self.start_n,self.col_length): 
 #        for n in range(20,21): 
             if self.rebalancing_date.iloc[n,0][5:7] =='02':
                 n-=1
