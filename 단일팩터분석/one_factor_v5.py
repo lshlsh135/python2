@@ -21,9 +21,7 @@ Created on Fri Apr 12 15:45:47 2019
 
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 13 13:18:35 2018
-
-@author: 지형범
+MATKET_CAP 대신 MARKET_CAP_COM(보통주 시가총액)사용하기로 함.
 """
 
 
@@ -93,26 +91,30 @@ class QVGSM_VALUE:
          
             
         if cap_bottom != "":
-            first_data = first_data[first_data['MARKET_CAP']>=cap_bottom]
+            first_data = first_data[first_data['MARKET_CAP_COM']>=cap_bottom]
 
         if cap_ceil != "":
-            first_data = first_data[first_data['MARKET_CAP']<=cap_ceil]
+            first_data = first_data[first_data['MARKET_CAP_COM']<=cap_ceil]
 
         return first_data
         
     def set_factors(self,first_data): # 2매달 바뀌는 친구들은 제외
         if self.factor == '1/per':
-            first_data[self.factor] = first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP']
+            first_data[self.factor] = first_data['ADJ_NI_12M_FWD']/first_data['MARKET_CAP_COM']
         elif self.factor == '1/pbr':
-            first_data[self.factor] = first_data['EQUITY']/first_data['MARKET_CAP']
+            first_data[self.factor] = first_data['EQUITY']/first_data['MARKET_CAP_COM']
         elif self.factor == 'div_yield':
-            first_data[self.factor]=first_data['CASH_DIV_COM']/first_data['MARKET_CAP']
+            first_data[self.factor]=first_data['CASH_DIV_COM']/first_data['MARKET_CAP_COM']
         elif self.factor == 'ROE':
             first_data[self.factor]=first_data['NI']/first_data['EQUITY']
         elif self.factor == 'ROA':
             first_data[self.factor]=first_data['NI']/first_data['ASSET']
+        elif self.factor == 'size':
+            first_data[self.factor]=first_data['MARKET_CAP_COM']
+        elif self.factor == 'CFOA':
+            first_data[self.factor]=first_data['CFO_TTM'] / first_data['ASSET']
 
-              
+            
         first_data = first_data[first_data[self.factor].notnull()]
         return first_data
 
@@ -146,7 +148,7 @@ class QVGSM_VALUE:
                 first_data = self.raw_data[self.raw_data['TRD_DATE']==self.rebalancing_date.iloc[n,0]] # rebalanging할 날짜에 들어있는 모든 db data를 받아온다.
                 first_data = self.set_universe(first_data,cap_bottom,cap_ceil)
                                 
-                first_data['MARKET_CAP'] = first_data['MARKET_CAP_2LEAD']
+                first_data['MARKET_CAP_COM'] = first_data['MARKET_CAP_COM_2LEAD']
                 first_data['ADJ_NI_12M_FWD'] = first_data['ADJ_NI_12M_FWD_2LEAD']
                 first_data['NI_12M_FWD'] = first_data['NI_12M_FWD_2LEAD']
 #                first_data = first_data[first_data['MARKET_CAP']>100000000000]
