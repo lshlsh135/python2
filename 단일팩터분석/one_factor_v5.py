@@ -72,8 +72,8 @@ class QVGSM_VALUE:
         self.daily_date=pd.DataFrame(daily_return.groupby('TRD_DATE').count().reset_index()['TRD_DATE'])
         self.wics_mid = wics_mid
         self.wics_big = wics_big
-        if self.factor == 'CFOA':
-            self.start_n = 45
+        if self.factor == 'CFOA': # 코스닥이 49부터 가능..
+            self.start_n = 49
         elif self.factor == 'GPOA':
             self.start_n = 21
         else:

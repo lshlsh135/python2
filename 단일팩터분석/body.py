@@ -187,7 +187,7 @@ raw_data = raw_data[raw_data['CO_NM']!='에스와이코퍼레이션']
 
 kospi200_rtn_d  =(kospi200_day.pct_change()+1).fillna(1).cumprod()
 #for i in ['코스피','코스닥','코스피200']:  
-for i in ['코스피','코스피중소형','코스피200','코스닥','코스피+코스닥']:    
+for i in ['코스닥','코스피+코스닥']:    
     writer = pd.ExcelWriter(i+'.xlsx',engine='xlsxwriter')
     for j in ['GPOA','CFOA']:
         for k in ['',10**11]:
