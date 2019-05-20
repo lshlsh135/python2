@@ -94,6 +94,9 @@ class QVGSM_VALUE:
             
         elif self.uni == "코스피중소형":
             first_data = first_data[(first_data['CAP_SIZE']==2)|(first_data['CAP_SIZE']==3)]
+
+        elif self.uni == "코스피+코스닥중소형":
+            first_data = first_data[(first_data['MARKET_CAP_COM']>100000000000)&(first_data['MARKET_CAP_COM']<1000000000000)]
          
             
         if cap_bottom != "":

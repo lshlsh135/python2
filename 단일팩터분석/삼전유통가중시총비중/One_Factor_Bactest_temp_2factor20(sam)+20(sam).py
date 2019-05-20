@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon May 20 11:09:18 2019
+
+@author: 지형범
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Dec 12 14:36:30 2018
 
 
@@ -221,6 +228,13 @@ class One_Factor_BackTest:
                 first_data['EARNING_REVISION2'] = first_data['EPS_UPDOWN_FY2']/first_data['OPINION_COM_NUM']
                 first_data = first_data.loc[:,~first_data.columns.duplicated()] # 중복 columns를 제거한다
                 
+                
+                try:
+                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
+                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                except:
+                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+1,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                
                 factor2 = copy.deepcopy(factor)
                 for i in factor2:
                     locals()['data_{}'.format(i)] = first_data[first_data.loc[:,i].notnull()]
@@ -231,33 +245,22 @@ class One_Factor_BackTest:
                     locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)].assign(rnk = locals()['q_{}'.format(i)].loc[:,i+'_y'].rank(method='first',ascending = False))
                     locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['rnk']<=stock_num]
                 
-                q_1 = pd.DataFrame()
-                for df in factor2:
-                    q_1 = pd.concat([q_1,locals()['q_{}'.format(df)].loc[:,'GICODE']])
-                q_1 = q_1.drop_duplicates()    
-                q_1 = q_1.rename(columns={0:'GICODE'})
-                q_1 = pd.merge(q_1,first_data,on='GICODE')
-                
-                if len(q_1[q_1['GICODE']=='A005930'])==0:
+                    if len(locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['GICODE']=='A005930'])==0:
+                        locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['rnk']<=stock_num-1]
+                        q_temp = first_data[first_data['GICODE']=='A005930']
+                        q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
+                        samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
+                        locals()['q_{}'.format(i)]['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/(stock_num-1)
+                        locals()['q_{}'.format(i)] = pd.concat([locals()['q_{}'.format(i)],q_temp])
                     
-                    q_temp = first_data[first_data['GICODE']=='A005930']
-                    q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
-                    samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
-                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                    q_1 = pd.concat([q_1,q_temp])
-                
-                else:
+                    else:
                     
-                    samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
-                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                print(len(q_1))
-                try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+1,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+1,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                        samsung_float_weights = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['GICODE']=='A005930']['FLOAT_WEIGHTS'].values[0]
+                        locals()['q_{}'.format(i)].loc[locals()['q_{}'.format(i)]['GICODE']!='A005930','FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/(stock_num-1)
+                    print(len(locals()['q_{}'.format(i)]))
+                        
+             
                 
-                for i in range(1,2):
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
