@@ -55,7 +55,8 @@ class Performance_Evaluation:
             save_data = pd.concat([save_data,locals()['save_data_{}'.format(i)]],axis=0)
            
     
-        return save_data
+        return save_data, net_daily_gross_rtn
+    
     def Monthly_Winning_ratio(self,save_data):
         self.save_data = save_data
         win_data = pd.Series()
