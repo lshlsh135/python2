@@ -105,7 +105,7 @@ class One_Factor_BackTest:
         if factor == 'div_yield':
             start_n = 13
     def Samsung_Neutral(self):
-        for i in range(1,2): # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
+        for i in factor: # 5분위를 저장해야 하기 때문에 모든 변수를 5개씩 선언해준다.
             locals()['end_wealth_{}'.format(i)] = 1 # 포트폴리오의 시작 wealth = 1
             locals()['turno_{}'.format(i)] = 0 # 가장 처음 리밸런싱을 잡기 위한 변수
             locals()['wealth_{}'.format(i)] = list() # 매 리밸런싱때의 wealth 변화를 list로 저장
@@ -140,6 +140,13 @@ class One_Factor_BackTest:
                 first_data['EARNING_REVISION2'] = first_data['EPS_UPDOWN_FY2']/first_data['OPINION_COM_NUM']
                 first_data = first_data.loc[:,~first_data.columns.duplicated()] # 중복 columns를 제거한다
                 
+                try:
+                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
+                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                except:
+                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+2,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
+                
+                
                 factor2 = copy.deepcopy(factor)
                 for i in factor2:
                     locals()['data_{}'.format(i)] = first_data[first_data.loc[:,i].notnull()]
@@ -150,37 +157,27 @@ class One_Factor_BackTest:
                     locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)].assign(rnk = locals()['q_{}'.format(i)].loc[:,i+'_y'].rank(method='first',ascending = False))
                     locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['rnk']<=stock_num]
                 
-                q_1 = pd.DataFrame()
-                for df in factor2:
-                    q_1 = pd.concat([q_1,locals()['q_{}'.format(df)].loc[:,'GICODE']])
-                q_1 = q_1.drop_duplicates()    
-                q_1 = q_1.rename(columns={0:'GICODE'})
-                q_1 = pd.merge(q_1,first_data,on='GICODE')
+
                
-                if len(q_1[q_1['GICODE']=='A005930'])==0:
+                    if len(locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['GICODE']=='A005930'])==0:
+                        locals()['q_{}'.format(i)] = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['rnk']<=stock_num-1]
+                        q_temp = first_data[first_data['GICODE']=='A005930']
+                        q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
+                        samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
+                        locals()['q_{}'.format(i)]['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/(stock_num-1)
+                        locals()['q_{}'.format(i)] = pd.concat([locals()['q_{}'.format(i)],q_temp])
                     
-                    q_temp = first_data[first_data['GICODE']=='A005930']
-                    q_temp.loc[q_temp.loc[:,'FLOAT_WEIGHTS'].isnull(),'FLOAT_WEIGHTS'] = 0.22
-                    samsung_float_weights = q_temp.loc[:,'FLOAT_WEIGHTS'].values[0]
-                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                    q_1 = pd.concat([q_1,q_temp])
+                    else:
+                        
+                        samsung_float_weights = locals()['q_{}'.format(i)][locals()['q_{}'.format(i)]['GICODE']=='A005930']['FLOAT_WEIGHTS'].values[0]
+                        locals()['q_{}'.format(i)].loc[locals()['q_{}'.format(i)]['GICODE']!='A005930','FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/(stock_num-1)
+                    print(len(locals()['q_{}'.format(i)]))
                 
-                else:
-                    
-                    samsung_float_weights = q_1.loc[:,'FLOAT_WEIGHTS'].values[0]
-                    q_1['FLOAT_WEIGHTS'] = (1 - samsung_float_weights)/stock_num
-                print(len(q_1))
-                try:
-                    reb_next_day = day_date.loc[day_date.loc[day_date['TRD_DATE']==rebalancing_date.iloc[n+2,0]].index[0]+1,'TRD_DATE'] # 리밸런싱 다음날까지의 가격데이터가 필요하다!!
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=reb_next_day)&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                except:
-                    rtn_d_need=daily_return[(daily_return['TRD_DATE']<=rebalancing_date.iloc[n+2,0])&(daily_return['TRD_DATE']>rebalancing_date.iloc[n+1,0])] # 리밸런싱날부터 다음 리밸런싱날까지의 일별 데이타
-                
-                for i in range(1,2):
+
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/(len(q_1)-1)
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/(len(locals()['q_{}'.format(i)])-1)
                     
                     
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
@@ -264,7 +261,7 @@ class One_Factor_BackTest:
                     rst_rtn_d=pd.merge(locals()['q_{}'.format(i)],rtn_d_need,how='inner',on='GICODE') # 선택된 주식과 일별데이타 merge
                     rst_rtn_d['rtn_d'] = rst_rtn_d.groupby('GICODE')['ADJ_PRC_D'].apply(lambda x: x.pct_change()+1) # gross return으로 바꿔줌
                     rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']=='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * samsung_float_weights
-                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/(len(q_1)-1)
+                    rst_rtn_d.loc[(rst_rtn_d['TRD_DATE_y']==rst_rtn_d.loc[0,'TRD_DATE_y'])&(rst_rtn_d['GICODE']!='A005930'),'rtn_d'] = locals()['end_wealth_{}'.format(i)]  * (1-samsung_float_weights)/(len(locals()['q_{}'.format(i)])-1)
                     
                     rst_rtn_d['rtn_d_cum']=rst_rtn_d.groupby('GICODE')['rtn_d'].cumprod() # 각 주식별 누적수익률
                     
@@ -290,7 +287,7 @@ class One_Factor_BackTest:
                     locals()['rst_rtn_d_past_{}'.format(i)] = rst_rtn_d                
                 
             
-        for i in range(1,2):
+        for i in factor:
         
             locals()['wealth_{}'.format(i)] = pd.concat(locals()['wealth_{}'.format(i)]) # 맨 마지막에 리스트를 풀어서 시리즈로 만들어줌
             locals()['wealth_{}'.format(i)]=locals()['wealth_{}'.format(i)][~locals()['wealth_{}'.format(i)].index.duplicated(keep='first')] #index 중복제거 
